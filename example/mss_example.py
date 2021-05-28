@@ -1,22 +1,23 @@
-import json
+import io
 import paker
+import logging
 
-# THIS STILL DOES NOT WORK
 
 if __name__ == '__main__':
-    p = paker.Paker()
+    logging.basicConfig(level=logging.INFO)
 
     # serialize and write module to file
-    serialized = p.dump("mss")
-    with open("mss_example.dump", "w+") as f:
-        f.write(json.dumps(serialized, indent=4))
+    # serialized = paker.dump("mss")
 
-    # now you can delete package directory
+    # now you can uninstall mss using `pip uninstall mss -y`
     # load package back from dump file
-    with open("mss_example.dump", "r") as f:
-        dumped = f.read()
+    with open("mss.zip", "rb") as f:
+        zip_bytes = io.BytesIO(f.read())
 
-    p.load(dumped)
-    import mss
-    print(dir(mss))
-    print(mss.mss().grab(mss.mss().monitors[0]))
+    with paker.loads(zip_bytes.read()) as loader:
+        loader.load_module("mss")
+        import mss
+
+        print(dir(mss))
+        with mss.mss() as sct:
+            sct.shot()
