@@ -7,7 +7,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     # serialize and write module to file
-    # serialized = paker.dump("mss")
+    serialized = paker.dump("mss")
 
     # now you can uninstall mss using `pip uninstall mss -y`
     # load package back from dump file
