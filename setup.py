@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Package imports
 from paker import __version__
@@ -9,6 +9,7 @@ from paker import __version__
 setup(
     name='paker',
     version=__version__,
+    packages=find_packages(),
     url='https://github.com/desty2k/paker',
     license='MIT',
     author='Wojciech Wentland',
