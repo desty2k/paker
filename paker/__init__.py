@@ -1,44 +1,67 @@
 """Paker is utility for dumping and loading Python modules from zip files.
 """
 
-from .spooled_zipimporter import zipimporter
-from .exception import PakerImportError
+from paker.jsonimporter import jsonimporter
 
-import os
+import json
 import types
 import typing
-import zipfile
-import pathlib
+import pkgutil
 import importlib
 
-_mod_type = type(typing)
-__version__ = "0.2"
+__version__ = "0.3"
 __all__ = ["dump", "load", "__version__"]
 
 
-def loads(zip_stream: typing.Union[bytes, bytearray]):
+def load(json_dict: typing.Union[str, dict]):
     """Load Python module from bytes stream containing zip file."""
-    if not isinstance(zip_stream, (bytes, bytearray)):
-        raise PakerImportError("the zip object must be bytes or bytearray, not {}".format(
-            zip_stream.__class__.__name__))
-    return zipimporter(zip_stream)
+    if type(json_dict) is str:
+        json_dict = json.loads(json_dict)
+    return jsonimporter(json_dict)
 
 
-def load(io_object: typing.IO):
-    return loads(io_object.read())
-
-
-def dump(module: typing.Union[str, types.ModuleType], target_dir=".", suffix=".zip"):
+def dump(module: typing.Union[str, types.ModuleType], skip_main=True):
     """Dump Python module to zip file"""
     if type(module) is str:
         module = importlib.import_module(module)
-    mod = pathlib.Path(module.__file__).resolve()
-    mod_dir = mod.parent
+    return {module.__name__: _dump(module, skip_main)}
 
-    with zipfile.ZipFile(target_dir + "/" + mod_dir.name + suffix, "w", zipfile.ZIP_DEFLATED) as output_zip:
-        for root, dirs, files in os.walk(mod_dir):
-            for file in files:
-                output_zip.write(os.path.join(root, file),
-                                 os.path.relpath(os.path.join(root, file),
-                                                 os.path.join(mod_dir, '..')))
-    return pathlib.Path(output_zip.filename).resolve()
+
+def _dump(module: types.ModuleType, skip_main):
+    modules = {"type": "package",
+               "code": "",
+               "modules": {}}
+
+    with open(module.__file__, "rb") as f:
+        try:
+            modules["code"] = f.read().decode()
+        except Exception as e:
+            print("[!] Dump error in package <{} - {}> {}".format(module.__name__, module.__file__, e))
+            raise e
+
+    # serialize submodules and subpackages
+    for loader, module_name, is_pkg in pkgutil.walk_packages(module.__path__):
+        if module_name == "__main__" and skip_main:
+            continue
+
+        full_name = module.__name__ + '.' + module_name
+        if is_pkg:
+            # recurse to every subpackage
+            modules["modules"][module_name](_dump(full_name, skip_main=skip_main))
+        else:
+            # load module
+            try:
+                full_module = importlib.import_module(full_name)
+            except ImportError:
+                continue
+
+            if full_module.__file__.endswith(".pyd"):
+                continue
+
+            with open(full_module.__file__, "rb") as f:
+                module_src = f.read()
+
+            modules["modules"][module_name] = {"type": "module",
+                                               "code": module_src.decode()}
+    return modules
+
