@@ -15,11 +15,11 @@ class jsonimporter:
         self.logger = logging.getLogger(self.__class__.__name__)
         sys.meta_path.append(self)
 
-        # Check whether we can satisfy the import of the module named by
-        # 'fullname', or whether it could be a portion of a namespace
-        # package. Return self if we can load it, a string containing the
-        # full path if it's a possible namespace portion, None if we
-        # can't load it.
+    # Check whether we can satisfy the import of the module named by
+    # 'fullname', or whether it could be a portion of a namespace
+    # package. Return self if we can load it, a string containing the
+    # full path if it's a possible namespace portion, None if we
+    # can't load it.
     def find_loader(self, fullname: str, path=None):
         """find_loader(fullname, path=None) -> self, str or None.
 
@@ -51,7 +51,7 @@ class jsonimporter:
         self.logger.debug("[?] Searching for {}".format(fullname))
         return self.find_loader(fullname, path)[0]
 
-        # Load and return the module named by 'fullname'.
+    # Load and return the module named by 'fullname'.
     def load_module(self, fullname):
         """load_module(fullname) -> module.
 
