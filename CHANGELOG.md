@@ -1,4 +1,10 @@
 
+- 0.3.2:
+  - Add badges in readme
+  - Clean the code, fix typos
+  - Fix packages not being properly recreated in CLI mode
+  - Add long project description for PyPI
+
 - 0.3.1:
   - Add arg parser
   - Add dump/load from CLI
