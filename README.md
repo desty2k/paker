@@ -6,9 +6,39 @@ It was inspired by [httpimporter](https://github.com/operatorequals/httpimport).
 Paker dumps entire package structure to JSON dict. 
 When loading package back, package is recreated with its submodules and subpackages.
 
+## Instalation
+From PyPI
+
+```shell
+pip install paker
+```
+
+From source
+
+```shell
+git clone https://github.com/desty2k/paker.git
+cd paker
+pip install .
+```
 
 ## Usage
-Check example directory for more scripts.
+
+### CLI
+
+To dump module to JSON dict use `dump` command:
+
+```shell
+paker dump mss
+```
+
+To recreate module from JSON dict use `load`:
+
+```shell
+paker load mss.json
+```
+
+### In Python script
+In this example we will use paker to serialize [mss](https://pypi.org/project/mss/) package.
 
 ```python
 
@@ -21,22 +51,26 @@ logging.basicConfig(level=logging.NOTSET)
 
 # install mss using `pip install mss`
 # serialize module
-serialized = paker.dump("mss")
-serialized = json.dumps(serialized, indent=4)
 with open(file, "w+") as f:
-    f.write(serialized)
+    paker.dump("mss", f, indent=4)
 
 # now you can uninstall mss using `pip uninstall mss -y`
 # load package back from dump file
 with open(file, "r") as f:
-    loader = paker.load(json.loads(f.read()))
+    loader = paker.load(f)
 
 import mss
-print(dir(mss))
 with mss.mss() as sct:
     sct.shot()
 
+# remove loader and clean cache
+loader.unload()
+
+# this will throw error
+import mss
+
 ```
+Check example directory for more scripts.
 
 ## Bugs
 
