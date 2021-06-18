@@ -1,9 +1,10 @@
+# Paker
+
 [![Build](https://github.com/desty2k/paker/actions/workflows/build.yml/badge.svg)](https://github.com/desty2k/paker/actions/workflows/build.yml)
 [![Version](https://img.shields.io/pypi/v/paker)](https://pypi.org/project/paker/)
 [![Version](https://img.shields.io/pypi/dm/paker)](https://pypi.org/project/paker/)
 
 
-# Paker
 Paker is module for serializing and deserializing Python modules and packages. 
 It was inspired by [httpimporter](https://github.com/operatorequals/httpimport).
 
