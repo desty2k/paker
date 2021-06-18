@@ -1,0 +1,16 @@
+setuptools
+pip
+wheel
+virtualenv
+pipdeptree
+
+pytest
+pytest-order
+
+pylint
+pycodestyle
+
+safety
+bandit
+
+radon
