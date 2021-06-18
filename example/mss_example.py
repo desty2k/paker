@@ -1,4 +1,3 @@
-import json
 import paker
 import logging
 
@@ -8,17 +7,23 @@ logging.basicConfig(level=logging.NOTSET)
 if __name__ == '__main__':
     # install mss using `pip install mss`
     # serialize module
-    # serialized = paker.dump("mss")
-    # serialized = json.dumps(serialized, indent=4)
-    # with open(file, "w+") as f:
-    #     f.write(serialized)
+
+    with open(file, "w+") as f:
+        paker.dump("mss", f, indent=4)
 
     # now you can uninstall mss using `pip uninstall mss -y`
     # load package back from dump file
     with open(file, "r") as f:
-        loader = paker.load(json.loads(f.read()))
+        loader = paker.load(f)
 
+    # import mss and take screenshot
     import mss
-    print(dir(mss))
     with mss.mss() as sct:
         sct.shot()
+
+    # remove loader and clean cache
+    loader.unload()
+
+    # this will throw error
+    import mss
+
