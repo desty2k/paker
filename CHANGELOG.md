@@ -1,4 +1,11 @@
 
+- 0.3.1:
+  - Add arg parser
+  - Add dump/load from CLI
+  - Add build and deploy workflows
+  - Add tests
+  - Fix dumping single modules
+
 - 0.3.0:
   - Use JSON dicts instead of zip files
   - Reduce the code size by about 7 times
