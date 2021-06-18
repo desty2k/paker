@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 
 # Package imports
-from paker import __version__
+from paker.__main__ import __version__
 
 setup(
     name='paker',
@@ -18,4 +18,9 @@ setup(
     long_description_content_type='text/x-rst',
     python_requires='>=3.5',
     zip_safe=False,  # don't use eggs
+    entry_points={
+        'console_scripts': [
+            'paker=paker.__main__:main_entry',
+        ],
+    },
 )
