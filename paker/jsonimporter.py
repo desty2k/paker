@@ -1,4 +1,5 @@
 import sys
+import typing
 import logging
 import _frozen_importlib_external as _bootstrap_external
 
@@ -98,3 +99,18 @@ class jsonimporter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def unload_module(self, module):
+        if isinstance(module, _module_type):
+            module = module.__name__
+        if module in self.module_cache:
+            del self.module_cache[module]
+        if module in sys.modules:
+            del sys.modules[module]
+
+    def unload(self):
+        if self in sys.meta_path:
+            sys.meta_path.remove(self)
+        for module_name in self.module_cache.keys():
+            if module_name in sys.modules:
+                del sys.modules[module_name]
