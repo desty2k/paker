@@ -27,6 +27,7 @@ pip install .
 ```
 
 ## Usage
+In these examples we will use paker to serialize [mss](https://pypi.org/project/mss/) package.
 
 ### CLI
 
@@ -43,11 +44,9 @@ paker load mss.json
 ```
 
 ### In Python script
-In this example we will use paker to serialize [mss](https://pypi.org/project/mss/) package.
 
 ```python
 
-import json
 import paker
 import logging
 
