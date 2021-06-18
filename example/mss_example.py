@@ -26,4 +26,3 @@ if __name__ == '__main__':
 
     # this will throw error
     import mss
-
