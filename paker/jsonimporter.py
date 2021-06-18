@@ -81,7 +81,7 @@ class jsonimporter:
 
             if not hasattr(mod, '__builtins__'):
                 mod.__builtins__ = __builtins__
-            exec(jsonmod["code"], mod.__dict__)  # noqa
+            exec(jsonmod["code"], mod.__dict__)
         except Exception:
             del sys.modules[fullname]
             raise
