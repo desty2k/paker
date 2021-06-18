@@ -35,10 +35,12 @@ def _recursive_load(mod_dict: dict):
     for key, value in mod_dict.items():
         if value["type"] == "package":
             os.makedirs(key, exist_ok=True)
+            old_dir = os.getcwd()
             os.chdir(key)
             with open("__init__.py", "w+") as f:
                 f.write(value["code"])
             _recursive_load(value["modules"])
+            os.chdir(old_dir)
         else:
             with open(key + ".py", "w+") as f:
                 f.write(value["code"])
