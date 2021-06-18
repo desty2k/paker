@@ -1,5 +1,4 @@
 import sys
-import typing
 import logging
 import _frozen_importlib_external as _bootstrap_external
 
