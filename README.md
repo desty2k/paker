@@ -12,7 +12,7 @@ It was inspired by [httpimporter](https://github.com/operatorequals/httpimport).
 Paker dumps entire package structure to JSON dict. 
 When loading package back, package is recreated with its submodules and subpackages.
 
-## Instalation
+## Installation
 From PyPI
 
 ```shell
@@ -68,7 +68,7 @@ import mss
 with mss.mss() as sct:
     sct.shot()
 
-# remove loader and clean cache
+# remove loader and clean the cache
 loader.unload()
 
 # this will throw error
