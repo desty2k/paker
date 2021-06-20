@@ -110,6 +110,7 @@ class jsonimporter:
     def unload(self):
         if self in sys.meta_path:
             sys.meta_path.remove(self)
-        for module_name in self.module_cache.keys():
+        for module_name in list(self.module_cache.keys()):
+            del self.module_cache[module_name]
             if module_name in sys.modules:
                 del sys.modules[module_name]
