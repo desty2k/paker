@@ -1,3 +1,9 @@
+# Changelog
+
+- 0.3.3:
+  - Unload jsonimporter on \_\_exit__
+  - Remove modules from cache when unloading jsonimporter
+  - Use utf-8 encoding when for reading files, fixes decode error
 
 - 0.3.2:
   - Add badges in readme
