@@ -48,7 +48,7 @@ def _dump(module: types.ModuleType, skip_main):
         modules = {"type": "package",
                    "code": "",
                    "modules": {}}
-        with open(module.__file__, "r") as f:
+        with open(module.__file__, "r", encoding="utf8") as f:
             try:
                 modules["code"] = f.read()
             except Exception as e:
@@ -76,7 +76,7 @@ def _dump(module: types.ModuleType, skip_main):
                 if full_module.__file__.endswith(".pyd"):
                     continue
 
-                with open(full_module.__file__, "r") as f:
+                with open(full_module.__file__, "r", encoding="utf8") as f:
                     module_src = f.read()
 
                 modules["modules"][module_name] = {"type": "module",
