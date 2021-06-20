@@ -97,7 +97,7 @@ class jsonimporter:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self.unload()
 
     def unload_module(self, module):
         if isinstance(module, _module_type):
