@@ -1,5 +1,14 @@
 # Changelog
 
+- 0.3.4:
+  - Add `paker list` CLI command
+  - Add CLI commands descriptions
+  - Add stream import example  
+  - Add PyPI classifiers and keywords  
+  - Do not print \_\_doc__ in paker help
+  - Update description in readme
+  
+
 - 0.3.3:
   - Unload jsonimporter on \_\_exit__
   - Remove modules from cache when unloading jsonimporter

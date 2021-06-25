@@ -127,7 +127,7 @@ import logging
 import argparse
 from paker import dump
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 
 def _dump(args):
