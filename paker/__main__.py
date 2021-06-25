@@ -106,6 +106,26 @@ def _dump(args):
         dump(mod, f, indent=indent)
 
 
+def _list(args):
+    path = args.module[0]
+    with open(path, "r") as f:
+        mod_dict = json.loads(f.read())
+    return _recursive_list(mod_dict)
+
+
+def _recursive_list(mod_dict: dict, parent=""):
+    for key, value in mod_dict.items():
+        if value["type"] == "package":
+            if parent:
+                key = parent + "." + key
+            print("P {}".format(key))
+            _recursive_list(value["modules"], parent=key)
+        else:
+            if parent:
+                key = parent + "." + key
+            print("M {}".format(key))
+
+
 def _load(args):
     path = args.module[0]
     with open(path, "r") as f:
@@ -173,6 +193,18 @@ def _parser():
     cparser.add_argument('-O', '--output', default='.', metavar='PATH',
                          help='Output directory path, default is "%(default)s"')
     cparser.set_defaults(func=_load)
+
+    # list modules and packages in json file
+    cparser = subparsers.add_parser(
+        'list',
+        aliases=['ls'],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help='List modules and packages in JSON document',
+        description="List modules and packages in JSON document"
+    )
+    cparser.add_argument('module', nargs=1, metavar='MODULE',
+                         help='Path to JSON document with module')
+    cparser.set_defaults(func=_list)
     return parser
 
 
