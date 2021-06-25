@@ -152,7 +152,7 @@ def _parser():
     parser = argparse.ArgumentParser(
         prog='paker',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=__doc__,
+        description="Import Python modules from JSON documents.",
         epilog='See "paker <command> -h" for more information '
                'on a specific command.'
     )
@@ -170,7 +170,8 @@ def _parser():
         'dump',
         aliases=['d'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='Dump package to JSON dict'
+        help='Dump package to JSON dict',
+        description="Dump package to JSON dict"
     )
     cparser.add_argument('module', nargs=1, metavar='MODULE',
                          help='Module name')
@@ -186,7 +187,8 @@ def _parser():
         'load',
         aliases=['l'],
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='Recreate module from JSON dict'
+        help='Recreate module from JSON dict',
+        description="Recreate module from JSON dict"
     )
     cparser.add_argument('module', nargs=1, metavar='MODULE',
                          help='Path to JSON document with module')
