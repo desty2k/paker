@@ -16,7 +16,7 @@ setup(
     author_email='wojciech.wentland@int.pl',
     description='Serialize Python modules and packages',
     long_description_content_type='text/markdown',
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     zip_safe=False,  # don't use eggs
     long_description=long_desc,
     entry_points={
