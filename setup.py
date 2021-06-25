@@ -14,7 +14,7 @@ setup(
     license='MIT',
     author='Wojciech Wentland',
     author_email='wojciech.wentland@int.pl',
-    description='Serialize Python modules and packages',
+    description='Import Python modules from JSON documents',
     long_description_content_type='text/markdown',
     python_requires='>=3.6',
     zip_safe=False,  # don't use eggs
