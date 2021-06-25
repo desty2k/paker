@@ -27,7 +27,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
 
-        'Environment :: Console'
+        'Environment :: Console',
 
         'License :: OSI Approved :: MIT License',
 
