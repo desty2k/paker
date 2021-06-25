@@ -24,4 +24,33 @@ setup(
             'paker=paker.__main__:main_entry',
         ],
     },
+    classifiers=[
+        'Development Status :: 4 - Beta',
+
+        'Environment :: Console'
+
+        'License :: OSI Approved :: MIT License',
+
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
+
+        'Intended Audience :: Developers',
+        'Intended Audience :: Information Technology',
+
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Software Development :: Build Tools',
+        'Topic :: Software Development :: Testing',
+
+    ],
+    keywords=['import',
+              'loader',
+              'finder',
+              'importer',
+              'json',
+              'memory'],
 )
