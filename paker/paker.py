@@ -60,6 +60,10 @@ def _dump(module: types.ModuleType, skip_main):
             if module_name == "__main__" and skip_main:
                 continue
 
+            # skip nested packages, they will be processed recursively later
+            if len(module_name.split(".")) > 1:
+                continue
+
             full_name = module.__name__ + '.' + module_name
 
             # load module
