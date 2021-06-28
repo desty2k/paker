@@ -1,5 +1,12 @@
 # Changelog
 
+- 0.3.5:
+  - Update readme
+  - Fix set utf-8 encoding when opening files in CLI mode
+  - Fix --output not working for CLI load
+  - Fix skip nested packages when dumping
+  - Use readme.md instead of \_\_doc__ from \_\_main__ for PyPI long description
+
 - 0.3.4:
   - Add `paker list` CLI command
   - Add CLI commands descriptions
@@ -8,7 +15,6 @@
   - Do not print \_\_doc__ in paker help
   - Update description in readme
   
-
 - 0.3.3:
   - Unload jsonimporter on \_\_exit__
   - Remove modules from cache when unloading jsonimporter
