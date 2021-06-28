@@ -167,6 +167,9 @@ def _load(args):
     path = args.module[0]
     with open(path, "r") as f:
         mod_dict = json.loads(f.read())
+    output = os.path.abspath(args.output)
+    os.makedirs(output, exist_ok=True)
+    os.chdir(output)
     return _recursive_load(mod_dict)
 
 
