@@ -1,9 +1,8 @@
 import sys
 import logging
-import _frozen_importlib_external as _bootstrap_external
+from os import sep as path_sep
 
 _module_type = type(sys)
-path_sep = _bootstrap_external.path_sep
 
 
 class jsonimporter:
