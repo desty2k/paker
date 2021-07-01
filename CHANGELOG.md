@@ -1,5 +1,10 @@
 # Changelog
 
+- 0.3.6:
+  - Add dill example
+  - Add license files for dill and mss (examples)
+  - Add string import example
+
 - 0.3.5:
   - Update readme
   - Fix set utf-8 encoding when opening files in CLI mode
