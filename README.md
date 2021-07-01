@@ -77,8 +77,11 @@ with mss.mss() as sct:
 # remove loader and clean the cache
 loader.unload()
 
-# this will throw error
-import mss
+try:
+    # this will throw error
+    import mss
+except ImportError:
+    print("mss unloaded successfully!")
 
 ```
 
