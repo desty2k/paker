@@ -1,7 +1,7 @@
 import paker
 import logging
 
-MODULE = {"somemodule": {"type": "module", "code": "fun = lambda x: x**2"}}
+MODULE = '{"somemodule": {"type": "module", "code": "fun = lambda x: x**2"}}'
 logging.basicConfig(level=logging.NOTSET)
 
 if __name__ == '__main__':
