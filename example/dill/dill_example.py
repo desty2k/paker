@@ -24,7 +24,7 @@ if __name__ == '__main__':
         print("Serialized object is {}".format(dilled))
         print("Deserialized object is {}".format(dill.loads(dilled)))
 
-    # import will throw error dill has been unloaded
+    # import will throw error
     try:
         import dill
     except ImportError as f:
