@@ -118,4 +118,4 @@ code and type of each module and submodules if object is package.
 
 ## Bugs
 
-Loading modules from `.pyd` files does not work.
+Loading modules from `.pyd`, `.dll` and `.so` files requires writing them to disk.
