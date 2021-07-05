@@ -9,7 +9,7 @@ from os import sep as path_sep
 # except ImportError:
 import _tempimporter as _memimporter
 
-from paker.exception import PakerImportError
+from exception import PakerImportError
 
 _module_type = type(sys)
 
