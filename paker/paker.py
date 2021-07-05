@@ -99,8 +99,8 @@ def _read_module_code(path: str, compile_module):
                     # try to compile and optimize module
                     code = base64.b64encode(marshal.dumps(compile(code, path, "exec", optimize=2))).decode()
                     extension = "pyc"
-                except Exception:
-                    pass
+                except Exception as e:
+                    raise PakerDumpError("failed to compile {} module: {}".format(path, e))
 
     elif extension in ("pyc", "dll", "pyd", "so"):
         with open(path, "rb") as f:

@@ -38,11 +38,4 @@ def load_library(data, fullname, filename, dlopen=True, initfuncname=None):
                 result = load_dynamic(fullname, filename)
     except Exception as e:
         raise e
-
-    finally:
-        try:
-            tempdir.cleanup()
-        except Exception:
-            pass
-
     return result

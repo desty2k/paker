@@ -24,10 +24,7 @@ def _dump(args):
         with open(output_path, "w+") as f:
             dump(mod, f, indent=indent, compile_modules=args.compile)
     except Exception:
-        try:
-            os.remove(output_path)
-        except Exception:
-            pass
+        os.remove(output_path)
         raise
 
 
