@@ -1,6 +1,15 @@
 import sys
+import base64
 import logging
+import marshal
 from os import sep as path_sep
+
+# try:
+#     import _memimporter
+# except ImportError:
+import _tempimporter as _memimporter
+
+from paker.exception import PakerImportError
 
 _module_type = type(sys)
 
@@ -56,39 +65,61 @@ class jsonimporter:
 
         Load the module specified by 'fullname'. 'fullname' must be the
         fully qualified (dotted) module name. It returns the imported
-        module, or raises ZipImportError if it wasn't found.
+        module, or raises PakerImportError if it wasn't found.
         """
+        mod = sys.modules.get(fullname)
+        if isinstance(mod, _module_type):
+            return mod
+
         if fullname in self.module_cache:
             self.logger.info("[=] Loading previously imported module {}".format(fullname))
             return self.module_cache[fullname]
 
-        path = fullname.split(".")
-        jsonmod = self.jsonmod[path[0]]
-        for submod in path[1:]:
-            jsonmod = jsonmod["modules"][submod]
-
-        mod = sys.modules.get(fullname)
-        if mod is None or not isinstance(mod, _module_type):
-            mod = _module_type(fullname)
-            sys.modules[fullname] = mod
-        mod.__loader__ = self
-
         try:
-            if jsonmod["type"] == "package":
-                mod.__path__ = [fullname.replace(".", path_sep)]
+            path = fullname.split(".")
+            jsonmod = self.jsonmod[path[0]]
+            for submod in path[1:]:
+                jsonmod = jsonmod["modules"][submod]
+        except KeyError:
+            raise PakerImportError("could not find {} module".format(fullname))
 
+        extension = jsonmod["extension"]
+        if extension == "py":
+            mod = _module_type(fullname)
+            mod.__loader__ = self
+            if jsonmod["type"] == "package":
+                mod.__path__ = ["paker://" + fullname.replace(".", path_sep)]
             if not hasattr(mod, '__builtins__'):
                 mod.__builtins__ = __builtins__
+            sys.modules[fullname] = mod
             exec(jsonmod["code"], mod.__dict__)
-        except Exception:
-            del sys.modules[fullname]
-            raise
+
+        elif extension == "pyc":
+            mod = _module_type(fullname)
+            mod.__loader__ = self
+            if jsonmod["type"] == "package":
+                mod.__path__ = ["paker://" + fullname.replace(".", path_sep)]
+            if not hasattr(mod, '__builtins__'):
+                mod.__builtins__ = __builtins__
+            sys.modules[fullname] = mod
+            exec(marshal.loads(base64.b64decode(jsonmod["code"])), mod.__dict__)
+
+        elif extension in ("dll", "pyd", "so"):
+            initname = "init" + fullname.rsplit(".", 1)[-1]
+            path = fullname.split(".")[-1] + "." + extension
+            mod = _memimporter.import_module(base64.b64decode(jsonmod["code"]), initname, fullname, path)
+            mod.__name__ = fullname
+            sys.modules[fullname] = mod
+
+        else:
+            raise PakerImportError("unknown module extension {} (expected py, pyc, dll, pyd, so)".format(extension))
 
         try:
             mod = sys.modules[fullname]
         except KeyError:
-            raise ImportError(f'Loaded module {fullname!r} not found in sys.modules')
-        self.logger.info("[+] {} has been loaded successfully".format(mod.__name__))
+            raise PakerImportError("loaded module {} not found in sys.modules".format(fullname))
+
+        self.logger.info("[+] {} has been imported successfully".format(mod.__name__))
         self.module_cache[fullname] = mod
         return mod
 
