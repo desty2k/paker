@@ -56,7 +56,7 @@ class jsonimporter:
         The optional 'path' argument is ignored -- it's there for compatibility
         with the importer protocol.
         """
-        self.logger.debug("[?] Searching for {}".format(fullname))
+        self.logger.debug("searching for {}".format(fullname))
         return self.find_loader(fullname, path)[0]
 
     # Load and return the module named by 'fullname'.
@@ -72,7 +72,7 @@ class jsonimporter:
             return mod
 
         if fullname in self.module_cache:
-            self.logger.info("[=] Loading previously imported module {}".format(fullname))
+            self.logger.info("loading previously imported module {}".format(fullname))
             return self.module_cache[fullname]
 
         try:
@@ -119,7 +119,7 @@ class jsonimporter:
         except KeyError:
             raise PakerImportError("loaded module {} not found in sys.modules".format(fullname))
 
-        self.logger.info("[+] {} has been imported successfully".format(mod.__name__))
+        self.logger.info("{} has been imported successfully".format(mod.__name__))
         self.module_cache[fullname] = mod
         return mod
 
