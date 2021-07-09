@@ -1,17 +1,23 @@
 # Changelog
 
+- 0.4.1:
+  - Add module cache for tempimporter
+  - Add automatic cleanup for tempimporter
+  - Use single temporary directory for importing dynamic libraries  
+  - Update logging strings
+
 - 0.4.0:
   - Add support for `.dll`, `.pyd` and `.so` files
   - Add support for `.pyc` files
   - Add dump option `compile_modules` (`-C` in CLI mode)
   - Add cv2 example
   - Add docstrings
-  - Update psutil example (it works now)
+  - Update psutil example (importing `.pyd` files works now)
   - Fix remove `.json` file if dump failed
 
 - 0.3.6:
   - Add dill example
-  - Add license files for dill and mss (examples)
+  - Add license files for dill and mss examples
   - Add string import example
 
 - 0.3.5:
