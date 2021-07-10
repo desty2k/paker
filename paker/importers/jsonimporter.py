@@ -7,9 +7,8 @@ from os import sep as path_sep
 # try:
 #     import _memimporter
 # except ImportError:
-import _tempimporter as _memimporter
-
-from exception import PakerImportError
+import paker.importers.tempimporter as _memimporter
+from paker.exceptions import PakerImportError
 
 _module_type = type(sys)
 

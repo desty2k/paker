@@ -7,8 +7,8 @@ import pkgutil
 import marshal
 import importlib
 
-from jsonimporter import jsonimporter
-from exception import PakerDumpError
+from .importers import jsonimporter
+from .exceptions import PakerDumpError
 
 __all__ = ["dump", "load", "dumps", "loads"]
 
