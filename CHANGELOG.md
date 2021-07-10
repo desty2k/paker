@@ -1,5 +1,11 @@
 # Changelog
 
+- 0.4.2:
+  - Rename _tempimporter to tempimporter
+  - Move tempimporter and jsonimporter to importers package
+  - Replace exception module with exceptions package  
+  - Fix import errors when freezing paker with Pyinstaller
+
 - 0.4.1:
   - Add module cache for tempimporter
   - Add automatic cleanup for tempimporter
