@@ -1,2 +1,2 @@
 from .jsonimporter import jsonimporter
-from .tempimporter import import_module
+from ._tempimporter import import_module

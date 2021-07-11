@@ -4,10 +4,13 @@ import logging
 import marshal
 from os import sep as path_sep
 
+# use _memimporter if is available
 # try:
 #     import _memimporter
 # except ImportError:
-import paker.importers.tempimporter as _memimporter
+#     from paker.importers import _tempimporter as _memimporter
+
+from paker.importers import _tempimporter as _memimporter
 from paker.exceptions import PakerImportError
 
 _module_type = type(sys)
