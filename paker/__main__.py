@@ -5,6 +5,7 @@ import base64
 import marshal
 import logging
 import argparse
+
 from paker import dump
 
 __version__ = "0.4.2"
