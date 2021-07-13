@@ -1,14 +1,13 @@
 import io
 import json
 import types
-import base64
 import typing
 import pkgutil
-import marshal
 import importlib
 
 from paker.importers import jsonimporter
-from paker.exceptions import PakerDumpError
+from paker.exceptions import PakerDumpError, PakerImportError
+from paker.utils import check_compatibility, read_source_code
 
 __all__ = ["dump", "load", "dumps", "loads", "__version__"]
 __version__ = "0.4.3"
@@ -37,6 +36,7 @@ def loads(s: typing.Union[str, dict, bytes, bytearray]):
         s = s.decode(json.detect_encoding(s), 'surrogatepass')
     if isinstance(s, str):
         s = json.loads(s)
+    check_compatibility(s)
     return jsonimporter(s)
 
 
@@ -49,7 +49,7 @@ def dumps(module: typing.Union[str, types.ModuleType], skip_main=True, compile_m
 
 def _dump(module: types.ModuleType, skip_main, compile_modules):
     if module.__file__.endswith("__init__.py"):
-        extension, code = _read_module_code(module.__file__, compile_modules)
+        extension, code = read_source_code(module.__file__, compile_modules)
         modules = {"type": "package",
                    "extension": extension,
                    "code": code,
@@ -78,36 +78,13 @@ def _dump(module: types.ModuleType, skip_main, compile_modules):
                 modules["modules"][module_name] = _dump(full_module, skip_main=skip_main,
                                                         compile_modules=compile_modules)
             else:
-                extension, code = _read_module_code(full_module.__file__, compile_modules)
+                extension, code = read_source_code(full_module.__file__, compile_modules)
                 modules["modules"][module_name] = {"type": "module",
                                                    "extension": extension,
                                                    "code": code}
     else:
-        extension, code = _read_module_code(module.__file__, compile_modules)
+        extension, code = read_source_code(module.__file__, compile_modules)
         modules = {"type": "module",
                    "extension": extension,
                    "code": code}
     return modules
-
-
-def _read_module_code(path: str, compile_module):
-    extension = path.split(".")[-1]
-    if extension == "py":
-        with open(path, "r", encoding="utf-8") as f:
-            code = f.read()
-            if compile_module:
-                try:
-                    # try to compile and optimize module
-                    code = base64.b64encode(marshal.dumps(compile(code, path, "exec", optimize=2))).decode()
-                    extension = "pyc"
-                except Exception as e:
-                    raise PakerDumpError("failed to compile module {}: {}".format(path, e))
-
-    elif extension in ("pyc", "dll", "pyd", "so"):
-        with open(path, "rb") as f:
-            code = base64.b64encode(f.read()).decode()
-
-    else:
-        raise PakerDumpError("unknown module extension {} (expected py, pyc, dll, pyd, so)".format(extension))
-
-    return extension, code
