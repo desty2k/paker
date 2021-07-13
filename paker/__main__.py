@@ -6,9 +6,7 @@ import marshal
 import logging
 import argparse
 
-from paker import dump
-
-__version__ = "0.4.2"
+from paker import dump, __version__
 
 
 def _dump(args):

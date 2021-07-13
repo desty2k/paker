@@ -10,7 +10,8 @@ import importlib
 from paker.importers import jsonimporter
 from paker.exceptions import PakerDumpError
 
-__all__ = ["dump", "load", "dumps", "loads"]
+__all__ = ["dump", "load", "dumps", "loads", "__version__"]
+__version__ = "0.4.3"
 
 
 def load(fp: io.IOBase):
