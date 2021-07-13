@@ -1,5 +1,10 @@
 # Changelog
 
+- 0.4.3:
+  - Add utils submodule
+  - Add extensions compatiblity check
+  - Move \_\_version__ variable to paker package
+
 - 0.4.2:
   - Add test for getting paker version
   - Move _tempimporter and jsonimporter to importers package
