@@ -1,5 +1,9 @@
 # Changelog
 
+- 0.4.4:
+  - Update example for importing modules from stream
+  - Add `-U` flag to PyPI installation instructions
+
 - 0.4.3:
   - Add utils submodule
   - Add extensions compatiblity check

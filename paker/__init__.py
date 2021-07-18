@@ -10,7 +10,7 @@ from paker.exceptions import PakerDumpError, PakerImportError
 from paker.utils import check_compatibility, read_source_code
 
 __all__ = ["dump", "load", "dumps", "loads", "__version__"]
-__version__ = "0.4.3"
+__version__ = "0.4.4"
 
 
 def load(fp: io.IOBase):
