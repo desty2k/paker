@@ -13,7 +13,7 @@ It was inspired by [httpimporter](https://github.com/operatorequals/httpimport).
 From PyPI
 
 ```shell
-pip install paker
+pip install paker -U
 ```
 
 From source
