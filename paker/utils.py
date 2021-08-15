@@ -17,6 +17,7 @@ SUPPORTED_SYSTEMS = {
 
 
 def check_compatibility(module_dict: dict):
+    """Check if module can be loaded on current platform."""
     for key, value in module_dict.items():
         if not _is_platform_compatible(value["extension"]):
             raise PakerImportError("module {}.{} cannot be imported on {} platform".format(key, value["extension"],
@@ -33,6 +34,7 @@ def _is_platform_compatible(extension: str):
 
 
 def read_source_code(path: str, compile_module: bool):
+    """Read module's source code from file."""
     extension = path.split(".")[-1]
     if extension == "py":
         with open(path, "r", encoding="utf-8") as f:

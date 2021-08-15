@@ -15,21 +15,33 @@ __version__ = "0.4.4"
 
 def load(fp: io.IOBase, overwrite: bool = False):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
-        a JSON document) to a Python module."""
-    return loads(fp.read())
+        a JSON document) to a Python module.
 
+    If ``overwrite`` is false, then paker will not overwrite existing modules.
+    """
+    return loads(fp.read(), overwrite=overwrite)
 
 
 def dump(module: typing.Union[str, types.ModuleType], fp: typing.IO[str], skip_main: bool = True, indent: int = None,
          compile_modules: bool = False):
     """Serialize Python module as a JSON formatted stream to ``fp`` (a
-        ``.write()``-supporting file-like object)."""
+        ``.write()``-supporting file-like object).
+
+    If ``skip_main`` is true then ``__main__`` files will not be serialized.
+
+    ``indent``, if specified, paker will generate JSON document with additional indent.
+
+    If ``compile_modules`` is true then all serialized modules will be compiled with ``optimize`` flag.
+    """
     fp.write(json.dumps(dumps(module, skip_main=skip_main, compile_modules=compile_modules), indent=indent))
 
 
 def loads(s: typing.Union[str, dict, bytes, bytearray], overwrite: bool = False):
     """Deserialize ``s`` (a ``str``, ``dict``, ``bytes`` or ``bytearray`` instance
-    containing a JSON document) to a Python module."""
+    containing a JSON document) to a Python module.
+
+    If ``overwrite`` is false, then paker will not overwrite existing modules.
+    """
     if not isinstance(s, (dict, str, bytes, bytearray)):
         raise TypeError(f'the module dict object must be dict, str, bytes or bytearray, '
                         f'not {s.__class__.__name__}')
