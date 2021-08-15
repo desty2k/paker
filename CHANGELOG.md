@@ -1,5 +1,10 @@
 # Changelog
 
+- 0.5.0:
+  - Import multiple modules from one jsonimporter to reduce memory usage
+  - Add multiload example
+  - Add docstrings
+
 - 0.4.4:
   - Update example for importing modules from stream
   - Add `-U` flag to PyPI installation instructions
