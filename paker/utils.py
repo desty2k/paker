@@ -2,9 +2,10 @@ import sys
 import base64
 import marshal
 
+from paker.importers import jsonimporter
 from paker.exceptions import PakerDumpError, PakerImportError
 
-__all__ = ["check_compatibility", "read_source_code"]
+__all__ = ["check_compatibility", "read_source_code", "get_jsonimporter_from_meta_path"]
 
 SUPPORTED_SYSTEMS = {
     "py": ["win32", "cygwin", "freebsd", "linux", "aix", "darwin"],
@@ -52,3 +53,10 @@ def read_source_code(path: str, compile_module: bool):
         raise PakerDumpError("unknown module extension {} (expected py, pyc, dll, pyd, so)".format(extension))
 
     return extension, code
+
+
+def get_jsonimporter_from_meta_path():
+    """Get jsonimporter instance from sys.meta_path."""
+    for importer in sys.meta_path:
+        if isinstance(importer, jsonimporter):
+            return importer

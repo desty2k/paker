@@ -7,26 +7,27 @@ import importlib
 
 from paker.importers import jsonimporter
 from paker.exceptions import PakerDumpError, PakerImportError
-from paker.utils import check_compatibility, read_source_code
+from paker.utils import check_compatibility, read_source_code, get_jsonimporter_from_meta_path
 
 __all__ = ["dump", "load", "dumps", "loads", "__version__"]
 __version__ = "0.4.4"
 
 
-def load(fp: io.IOBase):
+def load(fp: io.IOBase, overwrite: bool = False):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
         a JSON document) to a Python module."""
     return loads(fp.read())
 
 
-def dump(module: typing.Union[str, types.ModuleType], fp: typing.IO[str], skip_main=True, indent=None,
-         compile_modules=False):
+
+def dump(module: typing.Union[str, types.ModuleType], fp: typing.IO[str], skip_main: bool = True, indent: int = None,
+         compile_modules: bool = False):
     """Serialize Python module as a JSON formatted stream to ``fp`` (a
         ``.write()``-supporting file-like object)."""
     fp.write(json.dumps(dumps(module, skip_main=skip_main, compile_modules=compile_modules), indent=indent))
 
 
-def loads(s: typing.Union[str, dict, bytes, bytearray]):
+def loads(s: typing.Union[str, dict, bytes, bytearray], overwrite: bool = False):
     """Deserialize ``s`` (a ``str``, ``dict``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python module."""
     if not isinstance(s, (dict, str, bytes, bytearray)):
@@ -37,11 +38,26 @@ def loads(s: typing.Union[str, dict, bytes, bytearray]):
     if isinstance(s, str):
         s = json.loads(s)
     check_compatibility(s)
-    return jsonimporter(s)
+    importer = get_jsonimporter_from_meta_path()
+    if importer:
+        module_name = list(s.keys())[0]
+        if importer.find_module(module_name):
+            if overwrite:
+                importer.add_module(module_name, s.get(module_name))
+        else:
+            importer.add_module(module_name, s.get(module_name))
+    else:
+        importer = jsonimporter(s)
+    return importer
 
 
-def dumps(module: typing.Union[str, types.ModuleType], skip_main=True, compile_modules=False):
-    """Serialize Python module to a dict."""
+def dumps(module: typing.Union[str, types.ModuleType], skip_main: bool = True, compile_modules: bool = False):
+    """Serialize Python module to a dict.
+
+    If ``skip_main`` is true then ``__main__`` files will not be serialized.
+
+    If ``compile_modules`` is true then all serialized modules will be compiled with ``optimize`` flag.
+    """
     if type(module) is str:
         module = importlib.import_module(module)
     return {module.__package__: _dump(module, skip_main, compile_modules)}

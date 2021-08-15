@@ -20,7 +20,7 @@ class jsonimporter:
 
     def __init__(self, jsonmod):
         super(jsonimporter, self).__init__()
-        self.jsonmod = jsonmod
+        self.jsonmod: dict = jsonmod
         self.module_cache = {}
         self.logger = logging.getLogger(self.__class__.__name__)
         sys.meta_path.append(self)
@@ -114,35 +114,50 @@ class jsonimporter:
             sys.modules[fullname] = mod
 
         else:
-            raise PakerImportError("unknown module extension {} (expected py, pyc, dll, pyd, so)".format(extension))
+            raise PakerImportError("module extension must be .py, .pyc, .dll, .pyd or .so (got {})".format(extension))
 
         try:
             mod = sys.modules[fullname]
         except KeyError:
-            raise PakerImportError("loaded module {} not found in sys.modules".format(fullname))
+            raise PakerImportError("module {} not found in sys.modules".format(fullname))
 
         self.logger.info("{} has been imported successfully".format(mod.__name__))
         self.module_cache[fullname] = mod
         return mod
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.unload()
+    def add_module(self, module_name: str, module: dict):
+        """Add new module to jsonimporter object."""
+        if not isinstance(module, dict):
+            raise PakerImportError("module must be a dict (got {})".format(type(module)))
+        self.jsonmod[module_name] = module
+        self.logger.info("{} has been added successfully".format(module_name))
 
     def unload_module(self, module):
+        """Unload single module from sys.modules and remove its serialized source code from memory."""
         if isinstance(module, _module_type):
             module = module.__name__
+        if module in self.jsonmod:
+            del self.jsonmod[module]
         if module in self.module_cache:
             del self.module_cache[module]
         if module in sys.modules:
             del sys.modules[module]
+        self.logger.info("{} has been unloaded successfully".format(module))
 
     def unload(self):
+        """Unload all imported modules and remove jsonimporter from meta path."""
+        for module_name in list(self.jsonmod.keys()):
+            del self.jsonmod[module_name]
         if self in sys.meta_path:
             sys.meta_path.remove(self)
         for module_name in list(self.module_cache.keys()):
             del self.module_cache[module_name]
             if module_name in sys.modules:
                 del sys.modules[module_name]
+        self.logger.info("unloaded all modules")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.unload()
