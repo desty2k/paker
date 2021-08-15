@@ -1,0 +1,14 @@
+{
+    "firstpackage": {
+        "type": "package",
+        "extension": "py",
+        "code": "from .firstmodule import PRINT\n",
+        "modules": {
+            "firstmodule": {
+                "type": "module",
+                "extension": "py",
+                "code": "\ndef PRINT(string):\n    print(str(string).upper())\n"
+            }
+        }
+    }
+}

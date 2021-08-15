@@ -1,0 +1,8 @@
+{
+    "secondpackage": {
+        "type": "package",
+        "extension": "py",
+        "code": "\ndef Print(string):\n    print(str(string).capitalize())\n",
+        "modules": {}
+    }
+}
