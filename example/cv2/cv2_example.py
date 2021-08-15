@@ -11,7 +11,7 @@ file = "cv2.json"
 logging.basicConfig(level=logging.NOTSET)
 
 if __name__ == '__main__':
-    # read psutil code from json and load it using paker
+    # read cv2 code from json and load it using paker
     with open(file, "r") as f:
         with paker.load(f) as loader:
             import cv2
