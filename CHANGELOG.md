@@ -1,5 +1,9 @@
 # Changelog
 
+- 0.5.1:
+  - Multiloading: use dict keys as module names when adding modules to jsonimporter
+  - use `if obj is not None` instead of `if obj`
+
 - 0.5.0:
   - Import multiple modules from one jsonimporter to reduce memory usage
   - Add multiload example
