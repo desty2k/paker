@@ -51,13 +51,14 @@ def loads(s: typing.Union[str, dict, bytes, bytearray], overwrite: bool = False)
         s = json.loads(s)
     check_compatibility(s)
     importer = get_jsonimporter_from_meta_path()
-    if importer:
-        module_name = list(s.keys())[0]
-        if importer.find_module(module_name):
-            if overwrite:
+    if importer is not None:
+        modules = list(s.keys())
+        for module_name in modules:
+            if importer.find_module(module_name) is not None:
+                if overwrite:
+                    importer.add_module(module_name, s.get(module_name))
+            else:
                 importer.add_module(module_name, s.get(module_name))
-        else:
-            importer.add_module(module_name, s.get(module_name))
     else:
         importer = jsonimporter(s)
     return importer
