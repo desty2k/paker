@@ -1,5 +1,9 @@
 # Changelog
 
+- 0.5.2:
+  - Run multi-platform tests
+  - Support for Python 3.6 for version test
+
 - 0.5.1:
   - Multiloading: use dict keys as module names when adding modules to jsonimporter
   - use `if obj is not None` instead of `if obj`
