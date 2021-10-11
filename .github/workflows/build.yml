@@ -6,12 +6,13 @@ on:
 
 jobs:
   build:
-    name: Build - Python ${{ matrix.python-version }} - ${{ matrix.platform }}
+    name: Tests - Python ${{ matrix.python-version }} - ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
     strategy:
       max-parallel: 2
       matrix:
         platform: [ ubuntu-latest, macos-latest, windows-latest ]
+        tasks: [ test ]
         python-version: [ 3.6, 3.9 ]
     steps:
     - uses: actions/checkout@v2
@@ -27,18 +28,18 @@ jobs:
       run: tox
       env:
         PLATFORM: ${{ matrix.platform }}
-        TASK: build
+        TASK: ${{ matrix.tasks }}
 
-  test:
+  check:
     needs: [ build ]
-    name: Test - ${{ matrix.tasks }}
+    name: Check - ${{ matrix.tasks }}
     runs-on: ${{ matrix.platform }}
     strategy:
       max-parallel: 2
       matrix:
         platform: [ ubuntu-latest ]
         python-version: [ 3.9 ]
-        tasks: [ lint, test, safety, metric, release ]
+        tasks: [ lint, safety, metric, release ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -49,7 +50,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install tox tox-gh-actions
-      - name: Testing ${{ matrix.tasks }}
+      - name: Running ${{ matrix.tasks }}
         run: tox
         env:
           PLATFORM: ${{ matrix.platform }}
