@@ -5,7 +5,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  test:
     name: Tests - Python ${{ matrix.python-version }} - ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
     strategy:
@@ -31,7 +31,7 @@ jobs:
         TASK: ${{ matrix.tasks }}
 
   check:
-    needs: [ build ]
+    needs: [ test ]
     name: Check - ${{ matrix.tasks }}
     runs-on: ${{ matrix.platform }}
     strategy:
@@ -58,7 +58,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [ build, test ]
+    needs: [ test, check ]
     name: Publish release
 
     steps:
