@@ -1,7 +1,6 @@
 import os
 import sys
 import atexit
-import ctypes
 import shutil
 import logging
 import tempfile
@@ -22,45 +21,40 @@ def load_dynamic(name, path, file=None):
     return sys.modules[name]
 
 
-def import_module(data, initfuncname, fullname, filename):
-    """Import module from temporary file. Used when _memimporter is not available."""
-    return load_library(data, fullname, filename, dlopen=False, initfuncname=initfuncname)
-
-
-def load_library(data, fullname, filename, dlopen=True, initfuncname=None):
+def import_module(modname, pathname, initfuncname, finder, spec):
     """Create temporary file on disk and import module. Used for '.pyd', '.dll' and '.so' files."""
-    logger.info("importing {} from temporary file".format(fullname))
-    if fullname in module_cache:
-        return module_cache[fullname][1]
+    logger.info("importing {} from temporary file".format(modname))
+    if modname in module_cache:
+        return module_cache[modname][1]
 
     if os.path.isfile(paker_tempdir):
         os.remove(paker_tempdir)
     if not os.path.isdir(paker_tempdir):
         os.makedirs(paker_tempdir, exist_ok=True)
 
-    filename = os.path.join(paker_tempdir, filename)
+    # .pyd file path
+    filepath = os.path.join(paker_tempdir, os.path.split(pathname)[-1])
     try:
-        with open(filename, "wb+") as f:
-            f.write(data)
-        logger.debug("created temporary file {} for module {}".format(filename, fullname))
-
-        if dlopen:
-            result = ctypes.CDLL(filename)
+        with open(filepath, "wb+") as f:
+            f.write(finder(pathname))
+        logger.debug("created temporary file {} for module {}".format(filepath, modname))
+        if initfuncname:
+            result = load_dynamic(initfuncname[7:], filepath)
         else:
-            if initfuncname:
-                result = load_dynamic(initfuncname[4:], filename)
-            else:
-                result = load_dynamic(fullname, filename)
+            result = load_dynamic(modname, filepath)
     except Exception as e:
         raise e
 
     if len(module_cache) == 0:
         logger.debug("registering cleanup atexit function")
         atexit.register(_cleanup)
-    module_cache[fullname] = (filename, result)
+    module_cache[modname] = (filepath, result)
     return result
 
 
+# TODO
+# Windows - delete %TEMP%/paker/ dir using bat script
+# Linux - delete /tmp/paker/ dir using bash/sh script
 def _cleanup():
     """Python does not support unloading dynamic libraries in runtime, so
     cleanup is ran once at exit."""
