@@ -4,12 +4,15 @@ import atexit
 import shutil
 import logging
 import tempfile
+import subprocess
 import importlib.util
 import importlib.machinery
 
 module_cache = {}
 logger = logging.getLogger("tempimporter")
-paker_tempdir = os.path.join(tempfile.gettempdir(), "paker")
+TEMPDIR = tempfile.gettempdir()
+PAKER_TEMPDIR = os.path.join(TEMPDIR, "paker")
+PAKER_BAT_PATH = os.path.join(TEMPDIR, "paker.bat")
 
 
 def load_dynamic(name, path, file=None):
@@ -27,13 +30,12 @@ def import_module(modname, pathname, initfuncname, finder, spec):
     if modname in module_cache:
         return module_cache[modname][1]
 
-    if os.path.isfile(paker_tempdir):
-        os.remove(paker_tempdir)
-    if not os.path.isdir(paker_tempdir):
-        os.makedirs(paker_tempdir, exist_ok=True)
+    if os.path.isfile(PAKER_TEMPDIR):
+        os.remove(PAKER_TEMPDIR)
+    if not os.path.isdir(PAKER_TEMPDIR):
+        os.makedirs(PAKER_TEMPDIR, exist_ok=True)
 
-    # .pyd file path
-    filepath = os.path.join(paker_tempdir, os.path.split(pathname)[-1])
+    filepath = os.path.join(PAKER_TEMPDIR, os.path.split(pathname)[-1])
     try:
         with open(filepath, "wb+") as f:
             f.write(finder(pathname))
@@ -47,22 +49,36 @@ def import_module(modname, pathname, initfuncname, finder, spec):
 
     if len(module_cache) == 0:
         logger.debug("registering cleanup atexit function")
-        atexit.register(_cleanup)
+        if sys.platform.startswith("win32"):
+            fun = _delete_windows
+        else:
+            fun = _delete_linux
+        atexit.register(fun)
     module_cache[modname] = (filepath, result)
     return result
 
 
-# TODO
-# Windows - delete %TEMP%/paker/ dir using bat script
-# Linux - delete /tmp/paker/ dir using bash/sh script
-def _cleanup():
-    """Python does not support unloading dynamic libraries in runtime, so
-    cleanup is ran once at exit."""
-    for module in module_cache.values():
-        info = "module '{}' from '{}'".format(module[1].__name__, module[0])
-        try:
-            logger.debug("removing {}".format(info))
-            os.remove(module[0])
-        except Exception as e:
-            logger.error("failed to remove {}: {}".format(info, e))
-    shutil.rmtree(paker_tempdir, ignore_errors=True)
+def _delete_windows():
+    """Create '.bat' file in %TEMP% directory and start it.
+    When started, script waits 1s, kills Python process,
+    removes paker temporary directory and deletes itself from disk.
+
+    Used as cleanup function on win32 platform.
+    """
+    with open(PAKER_BAT_PATH, "w+") as f:
+        f.write("""
+timeout 1
+taskkill /PID {} /F
+rd /s /q "{}"
+(goto) 2>nul & del "%~f0"
+        """.format(os.getpid(), os.path.normpath(PAKER_TEMPDIR)))
+    subprocess.Popen(f.name, stdout=None, stderr=None, stdin=None, close_fds=True,
+                     creationflags=subprocess.CREATE_NO_WINDOW)
+
+
+def _delete_linux():
+    """Remove paker tempdir from disk.
+
+    Used as cleanup function on non win32 platforms.
+    """
+    shutil.rmtree(PAKER_TEMPDIR, ignore_errors=True)

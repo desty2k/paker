@@ -5,12 +5,15 @@ import marshal
 import importlib.util
 from os import sep as path_sep
 
+from paker.exceptions import PakerImportError
+
 # use _memimporter if is available
+_MEMIMPORTER = False
 try:
     import _memimporter
+    _MEMIMPORTER = True
 except ImportError:
     from paker.importers import _tempimporter as _memimporter
-from paker.exceptions import PakerImportError
 
 _module_type = type(sys)
 
@@ -125,7 +128,8 @@ class jsonimporter:
             initname = "PyInit_" + fullname.split(".")[-1]
             path = fullname.replace(".", "\\") + "." + extension
             spec = importlib.util.find_spec(fullname, path)
-
+            self.logger.info("using {} to load '.{}' file".format("_memimporter" if _MEMIMPORTER else "_tempimporter",
+                                                                  extension))
             mod = _memimporter.import_module(fullname, path, initname, self.get_data, spec)
             mod.__name__ = fullname
             sys.modules[fullname] = mod
