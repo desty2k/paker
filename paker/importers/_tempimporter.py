@@ -73,7 +73,7 @@ rd /s /q "{}"
 (goto) 2>nul & del "%~f0"
         """.format(os.getpid(), os.path.normpath(PAKER_TEMPDIR)))
     subprocess.Popen(f.name, stdout=None, stderr=None, stdin=None, close_fds=True,
-                     creationflags=subprocess.CREATE_NO_WINDOW)
+                     creationflags=subprocess.CREATE_NO_WINDOW, shell=False)
 
 
 def _delete_linux():
