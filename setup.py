@@ -5,6 +5,9 @@ import sys
 from importlib.machinery import EXTENSION_SUFFIXES
 from setuptools import setup, find_packages, Extension
 
+# Package imports
+from paker.__main__ import __version__
+
 if sys.version_info < (3, 9):
     python_dll_name = '\\"python%d%d.dll\\"' % sys.version_info[:2]
     python_dll_name_debug = '\\"python%d%d_d.dll\\"' % sys.version_info[:2]
@@ -54,9 +57,6 @@ _memimporter = Extension("_memimporter",
 ext_modules = []
 if sys.platform.startswith("win32"):
     ext_modules = [_memimporter]
-
-# Package imports
-from paker.__main__ import __version__
 
 with open("README.md", "r", encoding="utf-8") as f:
     long_desc = f.read()
