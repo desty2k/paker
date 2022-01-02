@@ -49,13 +49,20 @@ def import_module(modname, pathname, initfuncname, finder, spec):
 
     if len(module_cache) == 0:
         logger.debug("registering cleanup atexit function")
-        if sys.platform.startswith("win32"):
-            fun = _delete_windows
-        else:
-            fun = _delete_linux
-        atexit.register(fun)
+        atexit.register(_cleanup)
     module_cache[modname] = (filepath, result)
     return result
+
+
+def _cleanup():
+    """Clean up files on script exit. Log exceptions."""
+    try:
+        if sys.platform.startswith("win32"):
+            _delete_windows()
+        else:
+            _delete_linux()
+    except Exception as e:
+        logger.error(f"failed to clean up files at exit: '{e}'")
 
 
 def _delete_windows():
@@ -73,7 +80,7 @@ rd /s /q "{}"
 (goto) 2>nul & del "%~f0"
         """.format(os.getpid(), os.path.normpath(PAKER_TEMPDIR)))
     subprocess.Popen(f.name, stdout=None, stderr=None, stdin=None, close_fds=True,
-                     creationflags=subprocess.CREATE_NO_WINDOW, shell=True)
+                     creationflags=subprocess.CREATE_NO_WINDOW, shell=False)
 
 
 def _delete_linux():
@@ -81,4 +88,4 @@ def _delete_linux():
 
     Used as cleanup function on non win32 platforms.
     """
-    shutil.rmtree(PAKER_TEMPDIR, ignore_errors=True)
+    shutil.rmtree(PAKER_TEMPDIR)
