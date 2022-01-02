@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from distutils.core import Extension
-from setuptools import setup, find_packages
 from importlib.machinery import EXTENSION_SUFFIXES
+from setuptools import setup, find_packages, Extension
 
 if sys.version_info < (3, 9):
     python_dll_name = '\\"python%d%d.dll\\"' % sys.version_info[:2]
