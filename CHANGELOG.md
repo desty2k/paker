@@ -1,5 +1,13 @@
 # Changelog
 
+- 0.6.0:
+  - Add support for `_memimporter`
+  - Replace `exceptions` package with module
+  - Update _tempimporter.import_module function to match
+    _memimporter.import_module() signature
+  - Use `.bat` script to remove `paker` temporary directory
+    on `win32` platform
+
 - 0.5.2:
   - Run multi-platform tests
   - Support for Python 3.6 for version test

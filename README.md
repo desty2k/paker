@@ -8,6 +8,9 @@
 Paker is module for importing Python packages/modules from dictionaries and JSON formatted documents. 
 It was inspired by [httpimporter](https://github.com/operatorequals/httpimport).
 
+__Important:__ Since v0.6.0 `paker` supports importing `.pyd` and `.dll` modules directly from memory. 
+This was achieved by using `_memimporter` from [py2exe](https://github.com/py2exe/py2exe) project.
+Importing `.so` files on Linux still requires writing them to disk.
 
 ## Installation
 From PyPI
@@ -115,7 +118,3 @@ Paker implements its own importer called `jsonimporter`, which instead of search
 
 To dump module or package to JSON document, Paker recursively iterates over modules and creates dict with 
 code and type of each module and submodules if object is package.
-
-## Bugs
-
-Loading modules from `.pyd`, `.dll` and `.so` files requires writing them to disk.

@@ -2,16 +2,18 @@ import sys
 import base64
 import logging
 import marshal
+import importlib.util
 from os import sep as path_sep
 
-# use _memimporter if is available
-# try:
-#     import _memimporter
-# except ImportError:
-#     from paker.importers import _tempimporter as _memimporter
-
-from paker.importers import _tempimporter as _memimporter
 from paker.exceptions import PakerImportError
+
+# use _memimporter if is available
+_MEMIMPORTER = False
+try:
+    import _memimporter
+    _MEMIMPORTER = True
+except ImportError:
+    from paker.importers import _tempimporter as _memimporter
 
 _module_type = type(sys)
 
@@ -61,6 +63,21 @@ class jsonimporter:
         self.logger.debug("searching for {}".format(fullname))
         return self.find_loader(fullname, path)[0]
 
+    def get_data(self, fullname):
+        """Get module data by name in following format:
+            - package\\module.extension
+        This method is called by _memimporter to get source code of
+        .pyd and .dll modules.
+        """
+        path = fullname.split(".")[0].split("\\")
+        try:
+            jsonmod = self.jsonmod[path[0]]
+            for submod in path[1:]:
+                jsonmod = jsonmod["modules"][submod]
+            return base64.b64decode(jsonmod["code"])
+        except Exception as e:
+            return None
+
     # Load and return the module named by 'fullname'.
     def load_module(self, fullname):
         """load_module(fullname) -> module.
@@ -107,9 +124,13 @@ class jsonimporter:
             exec(marshal.loads(base64.b64decode(jsonmod["code"])), mod.__dict__)
 
         elif extension in ("dll", "pyd", "so"):
-            initname = "init" + fullname.rsplit(".", 1)[-1]
-            path = fullname.split(".")[-1] + "." + extension
-            mod = _memimporter.import_module(base64.b64decode(jsonmod["code"]), initname, fullname, path)
+            # initname = "init" + fullname.rsplit(".", 1)[-1]
+            initname = "PyInit_" + fullname.split(".")[-1]
+            path = fullname.replace(".", "\\") + "." + extension
+            spec = importlib.util.find_spec(fullname, path)
+            self.logger.info("using {} to load '.{}' file".format("_memimporter" if _MEMIMPORTER else "_tempimporter",
+                                                                  extension))
+            mod = _memimporter.import_module(fullname, path, initname, self.get_data, spec)
             mod.__name__ = fullname
             sys.modules[fullname] = mod
 
