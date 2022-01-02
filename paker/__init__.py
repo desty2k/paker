@@ -10,7 +10,7 @@ from paker.exceptions import PakerDumpError, PakerImportError
 from paker.utils import check_compatibility, read_source_code, get_jsonimporter_from_meta_path
 
 __all__ = ["dump", "load", "dumps", "loads", "__version__"]
-__version__ = "0.5.2"
+__version__ = "0.6.0"
 
 
 def load(fp: io.IOBase, overwrite: bool = False):
