@@ -1,5 +1,8 @@
 # Changelog
 
+- 0.6.1:
+  - Disable building wheels when uploading to PyPI
+
 - 0.6.0:
   - Add support for `_memimporter`
   - Replace `exceptions` package with module
