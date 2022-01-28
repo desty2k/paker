@@ -1,0 +1,19 @@
+{
+    "print_lib": {
+        "type": "package",
+        "extension": "py",
+        "code": "",
+        "modules": {
+            "capitalize": {
+                "type": "module",
+                "extension": "py",
+                "code": "def Print(text: str, *args, **kwargs):\n    print(text.capitalize(), *args, **kwargs)\n"
+            },
+            "decapitalize": {
+                "type": "module",
+                "extension": "py",
+                "code": "def pRINT(text: str, *args, **kwargs):\n    print(text[0].lower() + text[1:].upper(), *args, **kwargs)\n"
+            }
+        }
+    }
+}
