@@ -1,5 +1,9 @@
 # Changelog
 
+- 0.6.2:
+  - Update examples in README.md
+  - Fix all modules being unloaded when using nested loaders
+
 - 0.6.1:
   - Disable building wheels when uploading to PyPI
 
