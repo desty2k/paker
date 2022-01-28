@@ -23,6 +23,7 @@ class jsonimporter:
     def __init__(self, jsonmod):
         super(jsonimporter, self).__init__()
         self.jsonmod: dict = jsonmod
+        self.last_added = None
         self.module_cache = {}
         self.logger = logging.getLogger(self.__class__.__name__)
         sys.meta_path.append(self)
@@ -151,6 +152,7 @@ class jsonimporter:
         if not isinstance(module, dict):
             raise PakerImportError("module must be a dict (got {})".format(type(module)))
         self.jsonmod[module_name] = module
+        self.last_added = module_name
         self.logger.info("{} has been added successfully".format(module_name))
 
     def unload_module(self, module):
@@ -181,4 +183,8 @@ class jsonimporter:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.unload()
+        if self.last_added is None:
+            self.unload()
+        else:
+            self.unload_module(self.last_added)
+            self.last_added = None
