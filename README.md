@@ -33,8 +33,8 @@ Let's use `paker` to dump `print_lib` module with following directory structure:
 ```
 print_lib/
 ├── __init__.py
-├── capitalized.py
-└── decapitalized.py
+├── capitalize.py
+└── decapitalize.py
  ```
 `capitalized.py` contains `Print` function and `decapitalized.py` contains `pRINT` function. `__init__.py` file is empty.
 
@@ -132,14 +132,16 @@ logging.basicConfig(level=logging.NOTSET)
 if __name__ == '__main__':
     # you can use nested loaders
     with paker.loads(POW) as pow_loader:
+        # pow will be available only in this context
         with paker.loads(SQR) as sqr_loader:
-            # pow and sqr will be available only in this context
+            # sqr will be available only in this context
             from sqr import sqr
             assert sqr(2), 4
             assert sqr(5), 25
             print("6**2 is {}".format(sqr(6)))
 
         with paker.loads(TRI) as tri_loader:
+            # tri will be available only in this context
             from tri import tri
             assert tri(2), 8
             assert tri(5), 125
