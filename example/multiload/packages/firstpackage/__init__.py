@@ -1,1 +1,0 @@
-from .firstmodule import PRINT
