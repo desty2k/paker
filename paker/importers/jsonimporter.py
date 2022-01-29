@@ -11,6 +11,7 @@ from paker.exceptions import PakerImportError
 _MEMIMPORTER = False
 try:
     import _memimporter
+
     _MEMIMPORTER = True
 except ImportError:
     from paker.importers import _tempimporter as _memimporter
@@ -20,12 +21,12 @@ _module_type = type(sys)
 
 class jsonimporter:
 
-    def __init__(self, jsonmod):
+    def __init__(self, jsonmod: dict):
         super(jsonimporter, self).__init__()
-        self.jsonmod: dict = jsonmod
-        self.last_added = None
-        self.module_cache = {}
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self._jsonmod = jsonmod
+        self._modules_stack = []
+        self._module_cache = {}
+        self._logger = logging.getLogger(self.__class__.__name__)
         sys.meta_path.append(self)
 
     # Check whether we can satisfy the import of the module named by
@@ -45,7 +46,7 @@ class jsonimporter:
         """
         path = fullname.split(".")
         try:
-            jsonmod = self.jsonmod[path[0]]
+            jsonmod = self._jsonmod[path[0]]
             for submod in path[1:]:
                 jsonmod = jsonmod["modules"][submod]
             return self, []
@@ -61,10 +62,10 @@ class jsonimporter:
         The optional 'path' argument is ignored -- it's there for compatibility
         with the importer protocol.
         """
-        self.logger.debug("searching for {}".format(fullname))
+        self._logger.debug("searching for {}".format(fullname))
         return self.find_loader(fullname, path)[0]
 
-    def get_data(self, fullname):
+    def _get_data(self, fullname):
         """Get module data by name in following format:
             - package\\module.extension
         This method is called by _memimporter to get source code of
@@ -72,7 +73,7 @@ class jsonimporter:
         """
         path = fullname.split(".")[0].split("\\")
         try:
-            jsonmod = self.jsonmod[path[0]]
+            jsonmod = self._jsonmod[path[0]]
             for submod in path[1:]:
                 jsonmod = jsonmod["modules"][submod]
             return base64.b64decode(jsonmod["code"])
@@ -91,13 +92,13 @@ class jsonimporter:
         if isinstance(mod, _module_type):
             return mod
 
-        if fullname in self.module_cache:
-            self.logger.info("loading previously imported module {}".format(fullname))
-            return self.module_cache[fullname]
+        if fullname in self._module_cache:
+            self._logger.info("loading previously imported module {}".format(fullname))
+            return self._module_cache[fullname]
 
         try:
             path = fullname.split(".")
-            jsonmod = self.jsonmod[path[0]]
+            jsonmod = self._jsonmod[path[0]]
             for submod in path[1:]:
                 jsonmod = jsonmod["modules"][submod]
         except KeyError:
@@ -129,9 +130,9 @@ class jsonimporter:
             initname = "PyInit_" + fullname.split(".")[-1]
             path = fullname.replace(".", "\\") + "." + extension
             spec = importlib.util.find_spec(fullname, path)
-            self.logger.info("using {} to load '.{}' file".format("_memimporter" if _MEMIMPORTER else "_tempimporter",
-                                                                  extension))
-            mod = _memimporter.import_module(fullname, path, initname, self.get_data, spec)
+            self._logger.info("using {} to load '.{}' file".format("_memimporter" if _MEMIMPORTER else "_tempimporter",
+                                                                   extension))
+            mod = _memimporter.import_module(fullname, path, initname, self._get_data, spec)
             mod.__name__ = fullname
             sys.modules[fullname] = mod
 
@@ -143,48 +144,49 @@ class jsonimporter:
         except KeyError:
             raise PakerImportError("module {} not found in sys.modules".format(fullname))
 
-        self.logger.info("{} has been imported successfully".format(mod.__name__))
-        self.module_cache[fullname] = mod
+        self._logger.info("{} has been imported successfully".format(mod.__name__))
+        self._module_cache[fullname] = mod
         return mod
 
     def add_module(self, module_name: str, module: dict):
         """Add new module to jsonimporter object."""
         if not isinstance(module, dict):
             raise PakerImportError("module must be a dict (got {})".format(type(module)))
-        self.jsonmod[module_name] = module
-        self.last_added = module_name
-        self.logger.info("{} has been added successfully".format(module_name))
+        self._jsonmod[module_name] = module
+        self._modules_stack.append(module_name)
+        self._logger.info("{} has been added successfully".format(module_name))
 
-    def unload_module(self, module):
+    def unload_module(self, module: str):
         """Unload single module from sys.modules and remove its serialized source code from memory."""
         if isinstance(module, _module_type):
             module = module.__name__
-        if module in self.jsonmod:
-            del self.jsonmod[module]
-        if module in self.module_cache:
-            del self.module_cache[module]
+        if module in self._jsonmod:
+            del self._jsonmod[module]
+        if module in self._module_cache:
+            del self._module_cache[module]
         if module in sys.modules:
             del sys.modules[module]
-        self.logger.info("{} has been unloaded successfully".format(module))
+        self._logger.info("{} has been unloaded successfully".format(module))
 
     def unload(self):
         """Unload all imported modules and remove jsonimporter from meta path."""
-        for module_name in list(self.jsonmod.keys()):
-            del self.jsonmod[module_name]
+        for module_name in list(self._jsonmod.keys()):
+            del self._jsonmod[module_name]
         if self in sys.meta_path:
             sys.meta_path.remove(self)
-        for module_name in list(self.module_cache.keys()):
-            del self.module_cache[module_name]
+        for module_name in list(self._module_cache.keys()):
+            del self._module_cache[module_name]
             if module_name in sys.modules:
                 del sys.modules[module_name]
-        self.logger.info("unloaded all modules")
+        self._logger.info("unloaded all modules")
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.last_added is None:
+        """Executed on context manager exit. If no modules were added, unload all modules.
+        Otherwise, unload only last added module."""
+        if len(self._modules_stack) == 0:
             self.unload()
         else:
-            self.unload_module(self.last_added)
-            self.last_added = None
+            self.unload_module(self._modules_stack.pop())
