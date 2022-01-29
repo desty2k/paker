@@ -1,5 +1,9 @@
 # Changelog
 
+- 0.7.0:
+  - Make all `jsonimporter` instance variables private
+  - Remove multiload example
+
 - 0.6.2:
   - Update examples in README.md
   - Fix all modules being unloaded when using nested loaders
