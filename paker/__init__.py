@@ -4,6 +4,7 @@ import types
 import typing
 import pkgutil
 import importlib
+from importlib.machinery import SourceFileLoader
 
 from paker.importers import jsonimporter
 from paker.exceptions import PakerDumpError, PakerImportError
@@ -77,6 +78,8 @@ def dumps(module: typing.Union[str, types.ModuleType],
     """
     if type(module) is str:
         module = importlib.import_module(module)
+    if not isinstance(module.__loader__, SourceFileLoader):
+        raise PakerDumpError(f"module loader must be SourceFileLoader (got '{module.__loader__.__class__.__name__}')")
     if skip_modules is None:
         skip_modules = ["__main__"]
     return {module.__package__: _dump(module, skip_modules, compile_modules)}
