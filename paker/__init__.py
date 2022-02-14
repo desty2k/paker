@@ -22,7 +22,10 @@ def load(fp: io.IOBase, overwrite: bool = False):
     return loads(fp.read(), overwrite=overwrite)
 
 
-def dump(module: typing.Union[str, types.ModuleType], fp: typing.IO[str], skip_main: bool = True, indent: int = None,
+def dump(module: typing.Union[str, types.ModuleType],
+         fp: typing.IO[str],
+         skip_modules: list[typing.Union[str, types.ModuleType]] = None,
+         indent: int = None,
          compile_modules: bool = False):
     """Serialize Python module as a JSON formatted stream to ``fp`` (a
         ``.write()``-supporting file-like object).
@@ -33,7 +36,7 @@ def dump(module: typing.Union[str, types.ModuleType], fp: typing.IO[str], skip_m
 
     If ``compile_modules`` is true then all serialized modules will be compiled with ``optimize`` flag.
     """
-    fp.write(json.dumps(dumps(module, skip_main=skip_main, compile_modules=compile_modules), indent=indent))
+    fp.write(json.dumps(dumps(module, skip_modules=skip_modules, compile_modules=compile_modules), indent=indent))
 
 
 def loads(s: typing.Union[str, dict, bytes, bytearray], overwrite: bool = False):
@@ -64,19 +67,22 @@ def loads(s: typing.Union[str, dict, bytes, bytearray], overwrite: bool = False)
     return importer
 
 
-def dumps(module: typing.Union[str, types.ModuleType], skip_main: bool = True, compile_modules: bool = False):
+def dumps(module: typing.Union[str, types.ModuleType],
+          skip_modules: list[typing.Union[str, types.ModuleType]] = None,
+          compile_modules: bool = False):
     """Serialize Python module to a dict.
 
-    If ``skip_main`` is true then ``__main__`` files will not be serialized.
-
+    If ``skip_modules`` is specified, then paker will skip serializing these modules.
     If ``compile_modules`` is true then all serialized modules will be compiled with ``optimize`` flag.
     """
     if type(module) is str:
         module = importlib.import_module(module)
-    return {module.__package__: _dump(module, skip_main, compile_modules)}
+    if skip_modules is None:
+        skip_modules = ["__main__"]
+    return {module.__package__: _dump(module, skip_modules, compile_modules)}
 
 
-def _dump(module: types.ModuleType, skip_main, compile_modules):
+def _dump(module: types.ModuleType, skip_modules, compile_modules):
     if module.__file__.endswith("__init__.py"):
         extension, code = read_source_code(module.__file__, compile_modules)
         modules = {"type": "package",
@@ -86,7 +92,7 @@ def _dump(module: types.ModuleType, skip_main, compile_modules):
 
         # serialize submodules and subpackages
         for loader, module_name, is_pkg in pkgutil.walk_packages(module.__path__):
-            if module_name == "__main__" and skip_main:
+            if module_name in skip_modules:
                 continue
 
             # skip nested packages, they will be processed recursively later
@@ -104,7 +110,7 @@ def _dump(module: types.ModuleType, skip_main, compile_modules):
 
             if is_pkg:
                 # recurse to every subpackage
-                modules["modules"][module_name] = _dump(full_module, skip_main=skip_main,
+                modules["modules"][module_name] = _dump(full_module, skip_modules=skip_modules,
                                                         compile_modules=compile_modules)
             else:
                 extension, code = read_source_code(full_module.__file__, compile_modules)
