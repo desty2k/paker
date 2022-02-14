@@ -20,7 +20,6 @@ _module_type = type(sys)
 
 
 class jsonimporter:
-
     def __init__(self, jsonmod: dict):
         super(jsonimporter, self).__init__()
         self._jsonmod = jsonmod
@@ -57,7 +56,7 @@ class jsonimporter:
         """find_module(fullname, path=None) -> self or None.
 
         Search for a module specified by 'fullname'. 'fullname' must be the
-        fully qualified (dotted) module name. It returns the zipimporter
+        fully qualified (dotted) module name. It returns the jsonimporter
         instance itself if the module was found, or None if it wasn't.
         The optional 'path' argument is ignored -- it's there for compatibility
         with the importer protocol.
@@ -110,7 +109,7 @@ class jsonimporter:
             mod.__loader__ = self
             if jsonmod["type"] == "package":
                 mod.__path__ = ["paker://" + fullname.replace(".", path_sep)]
-            if not hasattr(mod, '__builtins__'):
+            if not hasattr(mod, "__builtins__"):
                 mod.__builtins__ = __builtins__
             sys.modules[fullname] = mod
             exec(jsonmod["code"], mod.__dict__)
@@ -120,7 +119,7 @@ class jsonimporter:
             mod.__loader__ = self
             if jsonmod["type"] == "package":
                 mod.__path__ = ["paker://" + fullname.replace(".", path_sep)]
-            if not hasattr(mod, '__builtins__'):
+            if not hasattr(mod, "__builtins__"):
                 mod.__builtins__ = __builtins__
             sys.modules[fullname] = mod
             exec(marshal.loads(base64.b64decode(jsonmod["code"])), mod.__dict__)
@@ -178,6 +177,7 @@ class jsonimporter:
             del self._module_cache[module_name]
             if module_name in sys.modules:
                 del sys.modules[module_name]
+        self._modules_stack.clear()
         self._logger.info("unloaded all modules")
 
     def __enter__(self):
