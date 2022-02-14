@@ -1,5 +1,11 @@
 # Changelog
 
+- 0.7.1:
+  - Replace `skip_main` with `skip_modules`
+  - Add check if module loader type is `SourceFileLoader` in `dump` function
+  - Clear module stack in `jsonimporter.unload` function
+  - Add info to README about recreating modules with `paker load` CLI command
+
 - 0.7.0:
   - Make all `jsonimporter` instance variables private
   - Remove multiload example
