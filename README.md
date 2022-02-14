@@ -78,9 +78,16 @@ M print_lib.capitalize
 M print_lib.decapitalize
 ```
 
+### Recreating package from JSON
+To recreate the package from the JSON use `paker load` command.
+```shell
+paker load print_lib.json
+```
+`print_lib` package will be created in the current directory. To set custom output path use `--output` option.
+
 ### Importing from `.json`
 __Note:__ Importing from original source code has higher priority than importing from JSON. 
-Remember to delete `print_lib` directory before importing the library with `paker`.
+Remember to remove module from disk before importing the library with `paker`.
 
 ```python
 import paker
