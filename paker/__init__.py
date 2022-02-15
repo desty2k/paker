@@ -69,7 +69,7 @@ def loads(s: typing.Union[str, dict, bytes, bytearray], overwrite: bool = False)
 
 
 def dumps(module: typing.Union[str, types.ModuleType],
-          skip_modules: list[typing.Union[str, types.ModuleType]] = None,
+          skip_modules: typing.List[typing.Union[str, types.ModuleType]] = None,
           compile_modules: bool = False):
     """Serialize Python module to a dict.
 
