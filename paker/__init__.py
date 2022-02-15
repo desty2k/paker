@@ -25,7 +25,7 @@ def load(fp: io.IOBase, overwrite: bool = False):
 
 def dump(module: typing.Union[str, types.ModuleType],
          fp: typing.IO[str],
-         skip_modules: list[typing.Union[str, types.ModuleType]] = None,
+         skip_modules: typing.List[typing.Union[str, types.ModuleType]] = None,
          indent: int = None,
          compile_modules: bool = False):
     """Serialize Python module as a JSON formatted stream to ``fp`` (a
