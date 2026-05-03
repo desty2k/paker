@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "paker"
 version = "2.0.0b1"
-description = "Import Python modules from JSON documents"
+description = "Encrypted in-memory Python package loader"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Build Tools",
 ]
-keywords = ["import", "loader", "finder", "importer", "json", "memory", "memimporter"]
+keywords = ["python", "package-loader", "in-memory", "encrypted", "native-extensions", "memfd", "code-protection", "bundle", "zero-disk", "importlib"]
 
 [project.scripts]
 paker = "paker.__main__:main_entry"
