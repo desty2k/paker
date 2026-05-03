@@ -1,56 +1,35 @@
+"""Integration test: dump a real package to JSON and re-import it."""
 import os
 import sys
+import json
 import pytest
 
-TESTS_DATA = "tests/tests_data"
-OUTPUT_FILENAME = "testpackage.json"
+import paker
+
+TESTS_DATA = os.path.join(os.path.dirname(__file__), "tests_data")
 PACKAGE_NAME = "testpackage"
 
-sys.path.insert(0, os.path.join(os.getcwd(), TESTS_DATA))
 
+def test_dump_and_reload(tmp_path):
+    sys.path.insert(0, TESTS_DATA)
+    output = tmp_path / f"{PACKAGE_NAME}.json"
+    try:
+        dumped = paker.dumps(PACKAGE_NAME)
+        serialized = json.dumps(dumped)
+        output.write_text(serialized)
 
-@pytest.mark.order(1)
-def test_script_dumps():
-    # import paker
-    import paker
+        for name in list(sys.modules):
+            if name.startswith(PACKAGE_NAME):
+                del sys.modules[name]
 
-    # dump
-    dumped = paker.dumps(PACKAGE_NAME)
+        with open(output, "r") as f:
+            with paker.load(f) as loader:
+                mod = loader.load_module(PACKAGE_NAME)
+                assert mod.__name__ == PACKAGE_NAME
 
-    # serialize dict to str
-    import json
-    dumped = json.dumps(dumped)
-
-    with open(OUTPUT_FILENAME, "w+") as f:
-        f.write(dumped)
-
-
-@pytest.mark.order(2)
-def test_script_loads():
-    # import paker
-    import paker
-
-    # read file with serialized module
-    with open(OUTPUT_FILENAME, "r") as f:
-        dumped = f.read()
-
-    # load module using loader
-    with paker.loads(dumped) as loader:
-        mod = loader.load_module("testpackage")
-        assert mod.__name__ == "testpackage"
-
-    # import module (standard way)
-    import testpackage
-
-    # testpackage should have Fibonacci submodule
-    assert "Fibonacci" in dir(testpackage)
-    assert testpackage.Fibonacci.fib(5) == [0, 1, 1, 2, 3]
-    assert testpackage.Fibonacci.fib_odd(5) == [1, 1, 3]
-
-
-@pytest.fixture(scope="session", autouse=True)
-def cleanup(request):
-    """Cleanup a testing directory once we are finished."""
-    def remove_test_files():
-        os.remove(OUTPUT_FILENAME)
-    request.addfinalizer(remove_test_files)
+        import testpackage
+        assert "Fibonacci" in dir(testpackage)
+        assert testpackage.Fibonacci.fib(5) == [0, 1, 1, 2, 3]
+        assert testpackage.Fibonacci.fib_odd(5) == [1, 1, 3]
+    finally:
+        sys.path.pop(0)
