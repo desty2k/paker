@@ -3,6 +3,9 @@ import ctypes
 import ctypes.util
 import atexit
 import logging
+import re
+
+from importlib.machinery import EXTENSION_SUFFIXES
 
 from paker._loaders._base import NativeLoader, DataResolver, _load_dynamic
 
@@ -22,6 +25,8 @@ _libc = None
 _memfd_create = None
 _dlopen = None
 _dlerror = None
+_MEMFD_NAME_LIMIT = 249
+_SAFE_MEMFD_CHARS = re.compile(r"[^A-Za-z0-9_.+-]")
 
 
 def _get_memfd_create():
@@ -106,7 +111,7 @@ class MemfdLoader(NativeLoader):
         if bundled_libs:
             self._preload_bundled_libs(bundled_libs)
         return self._load_with_writer(
-            fullname, lambda fd: os.write(fd, data), spec, resolve_dependency
+            fullname, lambda fd: _write_all(fd, data), spec, resolve_dependency
         )
 
     def load_from_fd(
@@ -127,7 +132,7 @@ class MemfdLoader(NativeLoader):
         if fullname in self._loaded:
             return self._loaded[fullname]
 
-        fd = self._memfd_create(b"", MFD_CLOEXEC)
+        fd = self._memfd_create(_memfd_name(fullname), MFD_CLOEXEC)
         if fd < 0:
             errno = ctypes.get_errno()
             raise OSError(errno, f"memfd_create failed for {fullname}: {os.strerror(errno)}")
@@ -243,17 +248,32 @@ class MemfdLoader(NativeLoader):
         self._lib_fds.append(fd)
 
     def cleanup(self) -> None:
+        # Native extension shared objects are not actually unloaded from the
+        # process when their Python modules leave sys.modules. Closing their
+        # memfd paths here lets the OS reuse the same fd number for a later
+        # extension, so dlopen sees the same literal path (/proc/self/fd/N)
+        # and can return the earlier handle. Keep fds alive until process
+        # exit, just like the loaded native code itself.
         self._loaded.clear()
-        for name, fd in self._fds.items():
-            try:
-                os.close(fd)
-            except OSError:
-                pass
-        self._fds.clear()
-        for fd in self._lib_fds:
-            try:
-                os.close(fd)
-            except OSError:
-                pass
-        self._lib_fds.clear()
-        self._preloaded_sonames.clear()
+
+
+def _memfd_name(fullname: str) -> bytes:
+    """Return a stable, unique memfd name for a Python extension module.
+
+    glibc's dynamic loader can cache objects by their resolved backing name.
+    If every memfd is anonymous (``memfd:``), a later extension load may get
+    the handle for an earlier module and then fail looking up its own
+    ``PyInit_*`` symbol. Naming the memfd after the module keeps dlopen cache
+    entries distinct while still avoiding filesystem writes.
+    """
+    suffix = EXTENSION_SUFFIXES[0] if EXTENSION_SUFFIXES else ".so"
+    name = f"paker-{fullname.replace('.', '_')}{suffix}"
+    name = _SAFE_MEMFD_CHARS.sub("_", name)
+    return name[:_MEMFD_NAME_LIMIT].encode("ascii", "replace")
+
+
+def _write_all(fd: int, data: bytes) -> None:
+    view = memoryview(data)
+    while view:
+        n = os.write(fd, view)
+        view = view[n:]

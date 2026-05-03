@@ -127,39 +127,92 @@ def _discover_libs_linux(
     # name at site-packages root).
     if "." in pkg_name:
         return
-    parent = os.path.dirname(pkg_dir)
-    sibling = os.path.join(parent, f"{pkg_name}.libs")
-    if not os.path.isdir(sibling):
-        return
+    candidates = _linux_lib_dirs_from_extension_rpaths(pkg_dir)
 
     from paker._native._elf import ElfParseError, parse_needed_and_soname
 
-    for name in sorted(os.listdir(sibling)):
-        if name.startswith("."):
-            continue
-        src = os.path.join(sibling, name)
-        if not os.path.isfile(src):
-            continue
-        try:
-            with open(src, "rb") as f:
-                data = f.read()
-        except OSError as e:
-            logger.debug("skipping bundled lib %s: %s", name, e)
-            continue
-        soname, needed = None, []
-        try:
-            soname, needed = parse_needed_and_soname(data)
-        except ElfParseError as e:
-            logger.debug("could not parse %s: %s", name, e)
-        result.libs.append(
-            NativeLib(
-                name=name,
-                data=data,
-                deps=needed,
-                soname=soname or name,
-                layout_path=f"../{pkg_name}.libs/{name}",
+    for sibling, layout_prefix in candidates:
+        for name in sorted(os.listdir(sibling)):
+            if name.startswith("."):
+                continue
+            src = os.path.join(sibling, name)
+            if not os.path.isfile(src):
+                continue
+            try:
+                with open(src, "rb") as f:
+                    data = f.read()
+            except OSError as e:
+                logger.debug("skipping bundled lib %s: %s", name, e)
+                continue
+            soname, needed = None, []
+            try:
+                soname, needed = parse_needed_and_soname(data)
+            except ElfParseError as e:
+                logger.debug("could not parse %s: %s", name, e)
+            result.libs.append(
+                NativeLib(
+                    name=name,
+                    data=data,
+                    deps=needed,
+                    soname=soname or name,
+                    layout_path=f"{layout_prefix}/{name}",
+                )
             )
-        )
+
+
+def _linux_lib_dirs_from_extension_rpaths(
+    pkg_dir: str,
+) -> list[tuple[str, str]]:
+    """Return auditwheel sidecar dirs referenced by package extension RPATHs.
+
+    Auditwheel records sidecar library locations in each extension's
+    ``DT_RPATH`` / ``DT_RUNPATH`` using ``$ORIGIN``. Resolving those entries
+    is more reliable than guessing names: Pillow imports as ``PIL`` but uses
+    ``pillow.libs``, while numpy uses ``numpy.libs``.
+    """
+    from paker._native._elf import ElfParseError, parse_rpaths
+
+    result: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    pkg_parent = os.path.dirname(pkg_dir)
+
+    for root, dirs, files in os.walk(pkg_dir):
+        dirs[:] = [
+            d for d in dirs
+            if d != "__pycache__" and not d.startswith(".")
+        ]
+        for filename in files:
+            if not filename.endswith((".so", ".pyd")) and ".so." not in filename:
+                continue
+            path = os.path.join(root, filename)
+            try:
+                with open(path, "rb") as f:
+                    rpaths = parse_rpaths(f.read())
+            except (OSError, ElfParseError):
+                continue
+            origin = os.path.dirname(path)
+            for rpath in rpaths:
+                resolved = _resolve_elf_origin_path(origin, rpath)
+                if not os.path.isdir(resolved):
+                    continue
+                if not os.path.basename(resolved).endswith(".libs"):
+                    continue
+                real = os.path.realpath(resolved)
+                if real in seen:
+                    continue
+                seen.add(real)
+                layout = os.path.relpath(real, pkg_parent).replace(os.sep, "/")
+                result.append((real, f"../{layout}"))
+
+    return result
+
+
+def _resolve_elf_origin_path(origin: str, value: str) -> str:
+    return os.path.abspath(
+        value
+        .replace("${ORIGIN}", origin)
+        .replace("$ORIGIN", origin)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -201,5 +254,3 @@ def _discover_libs_windows(
                     layout_path=f"{layout_prefix}/{name}",
                 )
             )
-
-

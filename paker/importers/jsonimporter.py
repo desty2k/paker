@@ -231,19 +231,24 @@ class JsonImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     def _decode_bundled_libs(
         self, fullname: str,
     ) -> list[tuple[str, bytes]] | None:
-        """Return the parent package's ``native_libs`` as ``(layout, bytes)`` pairs.
+        """Return ancestor ``native_libs`` as ``(layout, bytes)`` pairs.
 
         ``fullname`` is a native extension's dotted name (e.g.
-        ``PIL._imaging``). Its ``native_libs`` live on the nearest ancestor
-        package node. Returns ``None`` when no libs were bundled.
+        ``PIL._imaging`` or ``numpy._core._multiarray_umath``). Bundled
+        native libraries are stored on the package node where pack-time
+        discovery found the sidecar directory, usually the top-level package
+        node. Walk ancestors from nearest to farthest so nested extensions
+        can still find top-level ``native_libs``.
         """
         parent_parts = fullname.split(".")[:-1]
-        if not parent_parts:
-            return None
-        node = self._resolve(".".join(parent_parts))
-        if node is None:
-            return None
-        libs = node.get("native_libs")
+        libs = None
+        for idx in range(len(parent_parts), 0, -1):
+            node = self._resolve(".".join(parent_parts[:idx]))
+            if node is None:
+                continue
+            libs = node.get("native_libs")
+            if libs:
+                break
         if not libs:
             return None
         result: list[tuple[str, bytes]] = []

@@ -78,6 +78,25 @@ class TestMemfdLoader:
         loader.cleanup()
         loader.cleanup()
 
+    def test_extension_memfd_names_are_unique(self):
+        from paker._loaders._linux import _memfd_name
+
+        first = _memfd_name("pkg._first")
+        second = _memfd_name("pkg._second")
+
+        assert first != second
+        assert b"pkg__first" in first
+        assert b"pkg__second" in second
+        assert len(first) <= 249
+
+    def test_extension_memfd_name_sanitizes_path_separators(self):
+        from paker._loaders._linux import _memfd_name
+
+        name = _memfd_name("pkg.bad/name")
+
+        assert b"/" not in name
+        assert name.startswith(b"paker-")
+
 
 def _build_pe(*, magic: int, tls_rva: int = 0, tls_size: int = 0) -> bytes:
     """Build a minimal synthetic PE with controllable TLS directory entry."""

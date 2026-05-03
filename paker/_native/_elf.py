@@ -1,4 +1,4 @@
-"""Minimal ELF parser — extract ``DT_NEEDED`` and ``DT_SONAME``.
+"""Minimal ELF parser — extract dynamic-link metadata.
 
 Pure ``struct``; no ``pyelftools`` dependency. Supports 32-bit and 64-bit,
 little- and big-endian. The parser only needs to walk the program headers
@@ -6,8 +6,8 @@ to locate ``PT_DYNAMIC``, translate a few virtual addresses back to file
 offsets via ``PT_LOAD`` segments, and read null-terminated strings out of
 the string table.
 
-Used at pack time to build a Linux dependency graph and at load time (via
-the bundle's precomputed order) to know what to ``dlopen`` bottom-up.
+Used at pack time to find auditwheel sidecar libraries and build a Linux
+dependency graph, and at load time to know what to ``dlopen`` bottom-up.
 """
 
 from __future__ import annotations
@@ -30,6 +30,8 @@ _DT_NULL = 0
 _DT_NEEDED = 1
 _DT_STRTAB = 5
 _DT_SONAME = 14
+_DT_RPATH = 15
+_DT_RUNPATH = 29
 
 
 class ElfParseError(Exception):
@@ -45,6 +47,22 @@ def parse_needed_and_soname(data: bytes) -> tuple[str | None, list[str]]:
     in the order they appear.
 
     Raises :class:`ElfParseError` on malformed input.
+    """
+    dynamic = parse_dynamic_strings(data)
+    return dynamic["soname"], dynamic["needed"]
+
+
+def parse_rpaths(data: bytes) -> list[str]:
+    """Extract ``DT_RPATH`` / ``DT_RUNPATH`` entries from an ELF object."""
+    dynamic = parse_dynamic_strings(data)
+    return dynamic["rpaths"]
+
+
+def parse_dynamic_strings(data: bytes) -> dict[str, object]:
+    """Extract dynamic strings from an ELF shared object.
+
+    Returns ``{"soname": str | None, "needed": list[str],
+    "rpaths": list[str]}``. Raises :class:`ElfParseError` on malformed input.
     """
     if len(data) < 52 or data[:4] != _ELF_MAGIC:
         raise ElfParseError("not an ELF file")
@@ -120,6 +138,7 @@ def parse_needed_and_soname(data: bytes) -> tuple[str | None, list[str]]:
     strtab_vaddr: int | None = None
     needed_strtab_offsets: list[int] = []
     soname_strtab_offset: int | None = None
+    rpath_strtab_offsets: list[int] = []
 
     cursor = dyn_offset
     end = dyn_offset + dyn_size
@@ -132,6 +151,8 @@ def parse_needed_and_soname(data: bytes) -> tuple[str | None, list[str]]:
             needed_strtab_offsets.append(val)
         elif tag == _DT_SONAME:
             soname_strtab_offset = val
+        elif tag in (_DT_RPATH, _DT_RUNPATH):
+            rpath_strtab_offsets.append(val)
         elif tag == _DT_STRTAB:
             strtab_vaddr = val
 
@@ -160,7 +181,11 @@ def parse_needed_and_soname(data: bytes) -> tuple[str | None, list[str]]:
         if soname_strtab_offset is not None
         else None
     )
-    return soname, needed
+    rpaths: list[str] = []
+    for off in rpath_strtab_offsets:
+        raw = _read_c_string(strtab_offset, off)
+        rpaths.extend(part for part in raw.split(":") if part)
+    return {"soname": soname, "needed": needed, "rpaths": rpaths}
 
 
 def _vaddr_to_offset(

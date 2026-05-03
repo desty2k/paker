@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import base64
 
 import pytest
 
@@ -67,6 +68,66 @@ class TestDiscovery:
             sys.path.pop(0)
         result = discover_native_libs(testpackage)
         assert result.libs == []
+
+    def test_linux_sidecar_discovered_from_extension_rpath(self, tmp_path, monkeypatch):
+        """Pillow imports as PIL but its extension RPATH points to pillow.libs."""
+        if sys.platform != "linux":
+            pytest.skip("Linux layout helper")
+        from paker._native import _discovery, _elf
+
+        parent = tmp_path
+        pkg_dir = parent / "PIL"
+        pkg_dir.mkdir()
+        (parent / "pillow.libs").mkdir()
+        (pkg_dir / "_imaging.so").write_bytes(b"not-really-elf")
+        monkeypatch.setattr(_elf, "parse_rpaths", lambda data: [
+            "$ORIGIN/../pillow.libs",
+        ])
+
+        assert _discovery._linux_lib_dirs_from_extension_rpaths(
+            str(pkg_dir),
+        ) == [(str(parent / "pillow.libs"), "../pillow.libs")]
+
+
+class TestImporterNativeLibLookup:
+    def test_nested_extension_finds_top_level_native_libs(self):
+        from paker.importers import JsonImporter
+
+        payload = b"native-lib"
+        importer = JsonImporter({
+            "pkg": {
+                "type": "package",
+                "extension": "py",
+                "code": "",
+                "native_libs": [
+                    {
+                        "name": "libdep.so",
+                        "layout_path": "../pkg.libs/libdep.so",
+                        "code": base64.b64encode(payload).decode("ascii"),
+                    }
+                ],
+                "modules": {
+                    "sub": {
+                        "type": "package",
+                        "extension": "py",
+                        "code": "",
+                        "modules": {
+                            "native": {
+                                "type": "module",
+                                "extension": "so",
+                                "code": "",
+                            }
+                        },
+                    }
+                },
+            }
+        })
+        try:
+            assert importer._decode_bundled_libs("pkg.sub.native") == [
+                ("../pkg.libs/libdep.so", payload),
+            ]
+        finally:
+            importer.unload()
 
     @pytest.mark.skipif(sys.platform != "darwin", reason="macOS .dylibs layout")
     def test_pillow_dylibs(self):
