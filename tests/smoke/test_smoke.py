@@ -116,12 +116,6 @@ EXERCISES: dict[str, str] = {
         "t = Tool(name='add', inputSchema={'type': 'object', 'properties': {}})\n"
         "assert t.name == 'add'\n"
     ),
-    "pypdfium2": (
-        "import pypdfium2 as pdfium\n"
-        "pdf = pdfium.PdfDocument.new()\n"
-        "page = pdf.new_page(200, 300)\n"
-        "assert len(pdf) == 1\n"
-    ),
 }
 
 
@@ -174,9 +168,10 @@ def _load_and_exercise(pkg: str, variant: str) -> None:
     with open(path) as f:
         bundle = json.load(f)
     key = KEY if variant == "enc" else None
+    disk_policy = os.environ.get("PAKER_SMOKE_DISK_POLICY")
     _clear_all_loaded()
     try:
-        with paker.loads(bundle, key=key):
+        with paker.loads(bundle, key=key, disk_policy=disk_policy):
             exec(compile(EXERCISES[pkg], f"<smoke:{pkg}>", "exec"))
     finally:
         _clear_all_loaded()

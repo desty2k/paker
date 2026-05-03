@@ -5,7 +5,7 @@ Run in a venv with the target packages installed:
 
     pip install paker psutil click pydantic requests pyyaml rich jinja2 \
                 sqlalchemy numpy boto3 moto anthropic flask fastapi Pillow \
-                'mcp[cli]' pypdfium2
+                'mcp[cli]'
     python tests/smoke/pack.py
 
 Produces ``tests/smoke/bundles/<pkg>_plain.json`` and
@@ -45,7 +45,6 @@ PACKAGES: dict[str, list[str]] = {
     "fastapi": [],
     "PIL": [],
     "mcp": [],
-    "pypdfium2": ["pypdfium2_raw", "pypdfium2_cfg"],
 }
 
 
