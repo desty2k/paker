@@ -9,10 +9,7 @@
 Import Python packages — including native C extensions — from encrypted JSON
 documents. Entirely in memory. Zero disk footprint.<sup>1</sup>
 
-<sub>1. Zero disk on Linux (memfd) and Windows (MemoryModule) for most extensions.
-macOS uses write→dlopen→unlink (file exists for milliseconds). Windows
-extensions with Static TLS (Rust, some C++) require a tempfile. See
-`disk_policy` for control over disk behavior.</sub>
+<sub>1. Platform-dependent. See `disk_policy` for details.</sub>
 
 ## Features
 
