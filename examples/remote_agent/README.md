@@ -7,9 +7,7 @@ from memory with paker.
 
 ## Threat model
 
-The previous version of this demo shipped the API key to the client — a
-client compromise leaked the key. The current architecture keeps the API
-key on the server:
+The API key stays on the server. The client never sees it.
 
 | Runs on server | Runs on client |
 |---|---|
@@ -19,7 +17,7 @@ key on the server:
 
 A compromised client yields whichever libraries have already been shipped
 plus the session encryption key; it never sees the Anthropic API key, the
-model conversation history from other sessions, or the bundle of source.
+model conversation history from other sessions, or the bundle source.
 
 ## Architecture
 
