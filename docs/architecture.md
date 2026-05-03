@@ -28,8 +28,10 @@ optional-dep guards don't fire in the packer's process.
 `disk_policy="disk"` on `loads()` forces all extensions through the tempfile +
 OS loader path regardless of platform.
 
-Linux native extensions never touch the filesystem — they live in anonymous
-memory-backed file descriptors. On macOS, the file exists for milliseconds
+Linux native extensions never touch the filesystem — they live in named
+memory-backed file descriptors. The fds stay open for the process lifetime
+because glibc's dlopen caches by `/proc/self/fd/N` path string — if an fd
+number were reused, a later dlopen would return the wrong handle. On macOS, the file exists for milliseconds
 between write and `unlink`; the kernel keeps the `mmap`'d pages valid after
 deletion (same semantics as Apple's own `dlopen`, which writes to `$TMPDIR`
 internally since dyld3). On Windows, the PE loader maps DLL sections directly

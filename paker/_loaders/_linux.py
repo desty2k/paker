@@ -248,26 +248,15 @@ class MemfdLoader(NativeLoader):
         self._lib_fds.append(fd)
 
     def cleanup(self) -> None:
-        # Native extension shared objects are not actually unloaded from the
-        # process when their Python modules leave sys.modules. Closing their
-        # memfd paths here lets the OS reuse the same fd number for a later
-        # extension, so dlopen sees the same literal path (/proc/self/fd/N)
-        # and can return the earlier handle. Keep fds alive until process
-        # exit, just like the loaded native code itself.
+        # Fds stay open — glibc caches dlopen handles by path string, and
+        # closing an fd lets the kernel reuse its number for a different lib.
         self._loaded.clear()
 
 
 def _memfd_name(fullname: str) -> bytes:
-    """Return a stable, unique memfd name for a Python extension module.
-
-    glibc's dynamic loader can cache objects by their resolved backing name.
-    If every memfd is anonymous (``memfd:``), a later extension load may get
-    the handle for an earlier module and then fail looking up its own
-    ``PyInit_*`` symbol. Naming the memfd after the module keeps dlopen cache
-    entries distinct while still avoiding filesystem writes.
-    """
+    """Return a memfd name that looks like a normal Python extension."""
     suffix = EXTENSION_SUFFIXES[0] if EXTENSION_SUFFIXES else ".so"
-    name = f"paker-{fullname.replace('.', '_')}{suffix}"
+    name = f"{fullname.replace('.', '_')}{suffix}"
     name = _SAFE_MEMFD_CHARS.sub("_", name)
     return name[:_MEMFD_NAME_LIMIT].encode("ascii", "replace")
 

@@ -95,7 +95,7 @@ class TestMemfdLoader:
         name = _memfd_name("pkg.bad/name")
 
         assert b"/" not in name
-        assert name.startswith(b"paker-")
+        assert b"paker" not in name
 
 
 def _build_pe(*, magic: int, tls_rva: int = 0, tls_size: int = 0) -> bytes:
