@@ -27,8 +27,13 @@ import contextlib
 import io
 import posixpath
 from collections.abc import Iterator
+import sys
 from importlib.resources import as_file
-from importlib.resources.abc import Traversable, TraversableResources
+
+if sys.version_info >= (3, 12):
+    from importlib.resources.abc import Traversable, TraversableResources
+else:
+    from importlib.abc import Traversable, TraversableResources
 
 
 class BundleResources(TraversableResources):
@@ -162,6 +167,17 @@ class _BundleTraversable(Traversable):
         return f"<BundleTraversable {self._package_fullname}:{self._rel or '<root>'}>"
 
 
+def _materialize_tree(traversable: _BundleTraversable, base) -> None:
+    """Recursively write a traversable tree to a real directory."""
+    target = base / traversable.name
+    if traversable.is_dir():
+        target.mkdir(exist_ok=True)
+        for child in traversable.iterdir():
+            _materialize_tree(child, target)
+    else:
+        target.write_bytes(traversable.read_bytes())
+
+
 @as_file.register(_BundleTraversable)
 @contextlib.contextmanager
 def _as_file_bundle(traversable: _BundleTraversable):
@@ -179,11 +195,13 @@ def _as_file_bundle(traversable: _BundleTraversable):
     — we have no way to expose a whole subtree as a single fd.
     """
     if traversable.is_dir():
-        # Delegate to the stdlib's directory branch. ``as_file.dispatch(object)``
-        # is the bare generic function that handles both files and directories
-        # via the ``_temp_dir`` / ``_temp_file`` helpers.
-        with as_file.dispatch(object)(traversable) as path:
-            yield path
+        import tempfile
+        import pathlib
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base = pathlib.Path(tmpdir)
+            for child in traversable.iterdir():
+                _materialize_tree(child, base)
+            yield base
         return
 
     from paker._loaders._resource_paths import resource_path
