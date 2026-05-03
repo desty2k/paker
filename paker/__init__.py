@@ -769,9 +769,11 @@ def _pack_file(
     )
 
 
-_CODE_FILE_EXTS = frozenset({
-    ".py", ".pyc", ".pyo", ".pyd", ".so", ".dll",
-})
+_CODE_FILE_EXTS = frozenset({".py", ".pyc", ".pyo"})
+_NATIVE_EXT_PATTERNS = tuple(
+    s for s in importlib.machinery.EXTENSION_SUFFIXES
+    if "cpython" in s or "abi3" in s
+) + (".pyd",)
 
 
 def _pack_native_libs(
@@ -863,6 +865,8 @@ def _pack_resources(
                     continue
                 _, ext = os.path.splitext(name)
                 if ext.lower() in _CODE_FILE_EXTS:
+                    continue
+                if any(name.endswith(s) for s in _NATIVE_EXT_PATTERNS):
                     continue
                 src = os.path.join(root, name)
                 rel = os.path.relpath(src, path_entry_abs).replace(os.sep, "/")
