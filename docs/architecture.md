@@ -91,9 +91,13 @@ Two storage modes controlled by the `compile` parameter on `dumps()`:
 
 **`compile=False` (default)** -- portable source storage:
 ```
-dump:  source -> [user ast_transform] -> ast.unparse -> AES-256-CTR encrypt -> HMAC-SHA256 -> base64 -> JSON
+dump:  source -> [optional AST transform/unparse] -> AES-256-CTR encrypt -> HMAC-SHA256 -> base64 -> JSON
 load:  JSON -> base64 -> HMAC verify -> AES-256-CTR decrypt (in C) -> Py_CompileString (in C) -> memset -> exec
 ```
+
+When no AST-changing option is enabled, source text is stored unchanged. If
+`ast_transform` or `strip_annotations` is enabled, paker serializes the
+resulting AST with `ast.unparse`.
 
 **`compile=True`** -- pre-compiled bytecode storage:
 ```

@@ -55,6 +55,11 @@ def pack_one(name: str, extras: list[str]) -> None:
         bundle = paker.dumps(name, key=key, include_deps=True)
         for extra in extras:
             bundle.update(paker.dumps(extra, key=key, include_deps=True))
+        if not bundle:
+            raise RuntimeError(
+                f"{name} produced an empty bundle; install the target package "
+                "before generating smoke fixtures"
+            )
         elapsed = time.time() - t0
         out = os.path.join(BUNDLES_DIR, f"{name}_{variant}.json")
         with open(out, "w") as f:
@@ -66,11 +71,17 @@ def pack_one(name: str, extras: list[str]) -> None:
 
 def main() -> None:
     os.makedirs(BUNDLES_DIR, exist_ok=True)
+    failures: list[str] = []
     for name, extras in PACKAGES.items():
         try:
             pack_one(name, extras)
         except Exception as e:
             print(f"  {name}: SKIP ({type(e).__name__}: {e})")
+            failures.append(name)
+    if failures:
+        raise SystemExit(
+            f"failed to generate smoke bundles for: {', '.join(failures)}"
+        )
     print("done")
 
 

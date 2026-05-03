@@ -543,10 +543,22 @@ def _iter_submodules(module: types.ModuleType):
             if os.path.isdir(item_path) and not os.path.exists(
                 os.path.join(item_path, "__init__.py"),
             ):
-                has_py = any(f.endswith(".py") for f in os.listdir(item_path))
+                has_py = _contains_python_file(item_path)
                 if has_py:
                     seen.add(item)
                     yield item, True
+
+
+def _contains_python_file(path: str) -> bool:
+    """Return True when a directory tree contains any Python source file."""
+    for _root, dirs, files in os.walk(path):
+        dirs[:] = [
+            d for d in dirs
+            if d != "__pycache__" and not d.startswith(".")
+        ]
+        if any(f.endswith(".py") for f in files):
+            return True
+    return False
 
 
 def _dump(
@@ -929,7 +941,10 @@ def _transform_source(
     module_name: str,
     options: _DumpOptions,
 ) -> str:
-    """Parse → (ast_transform) → ast.unparse. Returns portable source text."""
+    """Return portable source, unparsing only when an AST pass changed it."""
+    if options.ast_transform is None and not options.strip_annotations:
+        return source
+
     try:
         tree = ast.parse(source, filename=path)
     except SyntaxError as e:

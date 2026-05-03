@@ -150,17 +150,17 @@ standard tools:
 ```python
 >>> import inspect
 >>> inspect.getsource(protected_module)
-TypeError: <module 'protected_module' (paker://protected_module)> is a built-in module
+OSError: could not get source code
 
 >>> inspect.getfile(protected_module)
-TypeError: <module 'protected_module' (paker://protected_module)> is a built-in module
+'paker://protected_module/__init__.py'
 
 >>> inspect.getsourcelines(protected_module.some_func)
 OSError: could not get source code
 ```
 
-All `inspect` methods are blocked. paker modules appear as built-in modules
-with no source file on disk.
+Source inspection is blocked because no source file exists on disk. Metadata
+inspection can still reveal the module's virtual `paker://` path.
 
 With `strip_metadata=True` (the default), `co_filename` and `co_qualname` are
 blanked on all code objects, so decompiled output doesn't leak the packager's

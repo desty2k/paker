@@ -157,10 +157,11 @@ bundle = paker.dumps("myapp", key=KEY, ast_transform=strip_docstrings)
 transforms (requires `compile=True`). See
 [`examples/basic/ast_transform_hook.py`](examples/basic/ast_transform_hook.py).
 
-By default, `.py` source is stored as-is (or as `ast.unparse`'d text when
-`ast_transform` is set). This makes bundles **portable across Python
-versions** (3.10+). Pass `compile=True` to store pre-compiled bytecode
-instead — faster load, but tied to the CPython minor version that packed it.
+By default, `.py` source is stored as-is. When `ast_transform` or
+`strip_annotations` is set, paker reparses and writes `ast.unparse`'d source.
+This makes bundles **portable across Python versions** (3.10+). Pass
+`compile=True` to store pre-compiled bytecode instead — faster load, but tied
+to the CPython minor version that packed it.
 
 ## Automatic dependency bundling
 

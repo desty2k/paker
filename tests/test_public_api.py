@@ -57,6 +57,30 @@ class TestNamespacePackage:
             from testpackage.nspkg import leaf
             assert leaf.VALUE == 42
 
+    def test_nested_namespace_package_discovered(self, tmp_path):
+        root = tmp_path / "root"
+        package = root / "pkg"
+        leaf_dir = package / "ns" / "inner"
+        leaf_dir.mkdir(parents=True)
+        (package / "__init__.py").write_text("")
+        (leaf_dir / "leaf.py").write_text("VALUE = 7\n")
+
+        sys.path.insert(0, str(root))
+        try:
+            bundle = paker.dumps("pkg")
+        finally:
+            sys.path.pop(0)
+            for n in list(sys.modules):
+                if n == "pkg" or n.startswith("pkg."):
+                    del sys.modules[n]
+
+        assert "ns" in bundle["pkg"]["modules"]
+        assert "inner" in bundle["pkg"]["modules"]["ns"]["modules"]
+
+        with paker.loads(bundle):
+            from pkg.ns.inner import leaf
+            assert leaf.VALUE == 7
+
 
 class TestLoads:
     def test_from_dict(self, simple_module_dict):
@@ -184,6 +208,21 @@ class TestDump:
             assert data["testpackage"]["extension"] == "py"
         finally:
             sys.path.pop(0)
+
+    def test_dump_default_preserves_source_text(self, tmp_path):
+        root = tmp_path / "root"
+        root.mkdir()
+        source = "# important comment\nX    =    1\n"
+        (root / "plain_source.py").write_text(source)
+
+        sys.path.insert(0, str(root))
+        try:
+            data = paker.dumps("plain_source")
+        finally:
+            sys.path.pop(0)
+            sys.modules.pop("plain_source", None)
+
+        assert data["plain_source"]["code"] == source
 
     def test_dump_compile_true_stores_bytecode(self, tmp_path):
         """compile=True stores marshalled bytecode."""
