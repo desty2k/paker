@@ -58,7 +58,7 @@ jobs:
           python -m venv .venv-pack
           .venv-pack/bin/python -m pip install --upgrade pip
           .venv-pack/bin/pip install -e .
-          .venv-pack/bin/pip install psutil click pydantic requests pyyaml rich jinja2 sqlalchemy numpy boto3 anthropic flask fastapi Pillow 'mcp[cli]'
+          .venv-pack/bin/pip install psutil click pydantic requests pyyaml rich jinja2 sqlalchemy numpy boto3 anthropic flask fastapi Pillow 'mcp[cli]' pypdfium2
           python -m venv .venv-smoke
           .venv-smoke/bin/python -m pip install --upgrade pip
           .venv-smoke/bin/pip install pytest

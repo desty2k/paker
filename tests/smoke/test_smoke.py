@@ -116,6 +116,12 @@ EXERCISES: dict[str, str] = {
         "t = Tool(name='add', inputSchema={'type': 'object', 'properties': {}})\n"
         "assert t.name == 'add'\n"
     ),
+    "pypdfium2": (
+        "import pypdfium2 as pdfium\n"
+        "pdf = pdfium.PdfDocument.new()\n"
+        "pdf.new_page(200, 300)\n"
+        "assert len(pdf) == 1\n"
+    ),
 }
 
 

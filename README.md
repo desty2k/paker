@@ -238,6 +238,7 @@ Dump + encrypt + load roundtrip verified with:
 | Pillow | Native extensions + bundled dylibs | OK |
 | psutil | Native per-platform | OK |
 | pydantic | Pure Python + C core | OK |
+| pynput | Native + PyObjC/X11 | OK |
 | pyyaml | Pure Python + C | OK |
 | requests | Pure Python | OK |
 | rich | Pure Python | OK |
