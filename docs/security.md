@@ -176,8 +176,6 @@ flowchart LR
         C1 --> D1[Write to anonymous fd]
         D1 --> E1["dlopen(/proc/self/fd/N)"]
         E1 --> F1[Module loaded]
-        Note over C1,D1: Zero disk writes
-        Note over D1: fd shows as 'memfd:' in /proc
     end
 
     subgraph macOS
@@ -186,8 +184,6 @@ flowchart LR
         C2 --> D2[dlopen]
         D2 --> E2[unlink immediately]
         E2 --> F2[Module loaded]
-        Note over C2,E2: File exists for milliseconds
-        Note over C2: Random name, no extension
     end
 
     subgraph Windows
@@ -196,7 +192,6 @@ flowchart LR
         C3 --> D3[Map PE sections]
         D3 --> E3[Resolve imports]
         E3 --> F3[Module loaded]
-        Note over C3,D3: Zero disk writes
     end
 ```
 
