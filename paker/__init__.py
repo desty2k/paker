@@ -239,10 +239,25 @@ def loads(
 
     from paker._loaders._base import get_native_loader, _resolve_loader_policy
     resolved_loader = get_native_loader(_resolve_loader_policy(native_loader))
+    as_file_strategy_was_set = (
+        as_file_strategy is not None or disk_policy is not None
+    )
+    native_loader_was_set = (
+        native_loader is not None or disk_policy is not None
+    )
 
     importer = _get_active_importer()
     if importer is not None:
-        if key is not None and importer._key != key:
+        if (
+            (key is not None and importer._key != key)
+            or _importer_policy_differs(
+                importer,
+                as_file_strategy=as_file_strategy,
+                native_loader=resolved_loader,
+                as_file_strategy_was_set=as_file_strategy_was_set,
+                native_loader_was_set=native_loader_was_set,
+            )
+        ):
             importer = JsonImporter(
                 s, key=key, as_file_strategy=as_file_strategy,
                 virtual_fs=virtual_fs, native_loader=resolved_loader,
@@ -260,6 +275,25 @@ def loads(
             virtual_fs=virtual_fs, native_loader=resolved_loader,
         )
     return importer
+
+
+def _importer_policy_differs(
+    importer: JsonImporter,
+    *,
+    as_file_strategy,
+    native_loader,
+    as_file_strategy_was_set: bool,
+    native_loader_was_set: bool,
+) -> bool:
+    """Return True when explicit policy knobs require a separate importer."""
+    if as_file_strategy_was_set:
+        from paker._loaders._resource_paths import resolve_strategy
+        if importer._as_file_strategy is not resolve_strategy(as_file_strategy):
+            return True
+    if native_loader_was_set:
+        if importer._native_loader.name != native_loader.name:
+            return True
+    return False
 
 
 def mp_initializer(
@@ -318,6 +352,7 @@ def dump(
     include_deps: bool = False,
     exclude_deps: set[str] | None = None,
     include_resources: bool = True,
+    include_native_libs: bool = True,
     strip_metadata: bool = True,
     strip_annotations: bool = False,
     ast_transform: AstTransform | None = None,
@@ -337,6 +372,7 @@ def dump(
             include_deps=include_deps,
             exclude_deps=exclude_deps,
             include_resources=include_resources,
+            include_native_libs=include_native_libs,
             strip_metadata=strip_metadata,
             strip_annotations=strip_annotations,
             ast_transform=ast_transform,
@@ -383,10 +419,12 @@ def dumps(
         exclude_deps: names of transitive deps to omit (for optional packages
             or ones that hit paker limitations).
         include_resources: also pack non-Python files (JSON data, PEM certs,
-            templates, any file that isn't ``.py`` / ``.pyc`` / ``.so`` /
-            ``.pyd`` / ``.dll``). Served to library code at import time via
+            templates, and plain shared libraries used via ctypes). Importable
+            CPython extension modules (``.cpython-*.so``, ``.abi3.so``,
+            ``.pyd``) are excluded from resources and packed as modules instead.
+            Served to library code at import time via
             ``importlib.resources.files(pkg)`` / ``pkgutil.get_data``. Required
-            for certifi, boto3, jinja2.PackageLoader, and similar packages.
+            for certifi, boto3, jinja2.PackageLoader, pypdfium2, and similar packages.
         strip_metadata: scrub ``co_filename`` / ``co_qualname`` from each code
             object so decompiled output doesn't leak the packager's local
             paths. Zero runtime cost. Default on.

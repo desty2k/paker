@@ -1,5 +1,6 @@
 """Tests for the public paker API (load, loads, dump, dumps)."""
 import importlib.metadata
+import io
 import os
 import sys
 import json
@@ -236,6 +237,19 @@ class TestDump:
             assert data["testpackage"]["extension"] == "pyc"
         finally:
             sys.path.pop(0)
+
+    def test_dump_forwards_include_native_libs(self, monkeypatch):
+        captured = {}
+
+        def fake_dumps(*args, **kwargs):
+            captured.update(kwargs)
+            return {}
+
+        monkeypatch.setattr(paker, "dumps", fake_dumps)
+
+        paker.dump("pkg", io.StringIO(), include_native_libs=False)
+
+        assert captured["include_native_libs"] is False
 
 
 class TestPlatformDetection:

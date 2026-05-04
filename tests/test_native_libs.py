@@ -5,12 +5,13 @@ from __future__ import annotations
 import os
 import sys
 import base64
+import struct
 
 import pytest
 
 import paker
 from paker._native._discovery import NativeLib, discover_native_libs
-from paker._native._elf import ElfParseError, parse_needed_and_soname
+from paker._native._elf import ElfParseError, parse_dynamic_strings, parse_needed_and_soname
 
 
 # ---------------------------------------------------------------------------
@@ -26,6 +27,23 @@ class TestElfParser:
     def test_truncated_header(self):
         with pytest.raises(ElfParseError):
             parse_needed_and_soname(b"\x7fELF")
+
+    def test_no_dynamic_section_returns_empty_metadata(self):
+        ident = b"\x7fELF" + bytes([2, 1, 1]) + b"\x00" * 9
+        header = struct.pack(
+            "<HHIQQQIHHHHHH",
+            3, 62, 1, 0, 64, 0, 0, 64, 56, 1, 0, 0, 0,
+        )
+        ph = struct.pack(
+            "<IIQQQQQQ",
+            1, 4, 0, 0, 0, 64 + 56, 64 + 56, 8,
+        )
+
+        assert parse_dynamic_strings(ident + header + ph) == {
+            "soname": None,
+            "needed": [],
+            "rpaths": [],
+        }
 
     def test_parses_real_so_when_available(self):
         """On Linux, parse an actual system shared object from the loader."""

@@ -126,7 +126,7 @@ def parse_dynamic_strings(data: bytes) -> dict[str, object]:
 
     if dyn is None:
         # No dynamic section — not a dynamically linked object. Return empty.
-        return None, []
+        return {"soname": None, "needed": [], "rpaths": []}
     dyn_offset, dyn_size = dyn
 
     # Walk the dynamic entries.

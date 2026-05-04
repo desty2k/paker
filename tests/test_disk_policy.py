@@ -156,6 +156,21 @@ class TestDiskPolicyOverrides:
             importer.unload()
             _clear()
 
+    def test_nested_policy_override_creates_separate_importer(self):
+        bundle = _pack()
+        _clear()
+        first = paker.loads(bundle, native_loader="auto")
+        second = None
+        try:
+            second = paker.loads(bundle, native_loader="disk")
+            assert second is not first
+            assert isinstance(second._native_loader, TempFileLoader)
+        finally:
+            if second is not None:
+                second.unload()
+            first.unload()
+            _clear()
+
 
 class TestDiskPolicyEnvIgnored:
     def test_env_var_not_consulted(self, monkeypatch):

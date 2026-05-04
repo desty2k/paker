@@ -64,6 +64,78 @@ class TestTempFileLoader:
     def test_name(self):
         assert TempFileLoader().name == "tempfile"
 
+    def test_bundled_libs_stay_inside_tempdir_and_cleanup(self, monkeypatch):
+        import paker._loaders._tempfile as tempfile_loader
+
+        loaded_paths = []
+
+        def fake_load_dynamic(name, path):
+            loaded_paths.append(path)
+            return object()
+
+        monkeypatch.setattr(tempfile_loader, "_load_dynamic", fake_load_dynamic)
+
+        loader = TempFileLoader()
+        module = loader.load(
+            "numpy._core._multiarray_umath",
+            b"native-extension",
+            "PyInit__multiarray_umath",
+            None,
+            bundled_libs=[
+                ("../numpy.libs/libdep.so", b"dep"),
+            ],
+        )
+
+        assert module is not None
+        tempdir = loader._tempdir
+        assert tempdir is not None
+        assert loaded_paths[0].startswith(os.path.join(tempdir, "numpy", "_core"))
+        assert os.path.exists(os.path.join(tempdir, "numpy.libs", "libdep.so"))
+        assert not os.path.exists(
+            os.path.join(os.path.dirname(tempdir), "numpy.libs", "libdep.so")
+        )
+
+        loader.cleanup()
+        assert not os.path.exists(tempdir)
+
+    def test_bundled_libs_are_not_rewritten(self, monkeypatch):
+        import paker._loaders._tempfile as tempfile_loader
+
+        def fake_load_dynamic(name, path):
+            return object()
+
+        monkeypatch.setattr(tempfile_loader, "_load_dynamic", fake_load_dynamic)
+
+        loader = TempFileLoader()
+        try:
+            bundled_libs = [("../numpy.libs/libdep.so", b"first")]
+            loader.load(
+                "numpy._core._multiarray_umath",
+                b"native-extension",
+                "PyInit__multiarray_umath",
+                None,
+                bundled_libs=bundled_libs,
+            )
+            dep_path = os.path.join(loader._tempdir, "numpy.libs", "libdep.so")
+            assert open(dep_path, "rb").read() == b"first"
+
+            loader.load(
+                "numpy.linalg._umath_linalg",
+                b"native-extension",
+                "PyInit__umath_linalg",
+                None,
+                bundled_libs=[("../numpy.libs/libdep.so", b"second")],
+            )
+            assert open(dep_path, "rb").read() == b"first"
+        finally:
+            loader.cleanup()
+
+    def test_bundled_lib_escape_rejected(self):
+        from paker._loaders._tempfile import _resolve_layout_path
+
+        with pytest.raises(ValueError, match="escapes tempdir"):
+            _resolve_layout_path("/tmp/paker/pkg", "../../../outside.so", "/tmp/paker")
+
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Linux only")
 class TestMemfdLoader:

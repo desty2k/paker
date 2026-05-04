@@ -254,7 +254,7 @@ paker.dump(
     module, fp, *,
     key=None, compile=False, skip_modules=None, indent=None,
     include_deps=False, exclude_deps=None, include_resources=True,
-    strip_metadata=True, strip_annotations=False,
+    include_native_libs=True, strip_metadata=True, strip_annotations=False,
     ast_transform=None, code_transform=None,
     on_import_error=ImportErrorPolicy.AUTO,
 )

@@ -121,6 +121,7 @@ EXERCISES: dict[str, str] = {
         "pdf = pdfium.PdfDocument.new()\n"
         "pdf.new_page(200, 300)\n"
         "assert len(pdf) == 1\n"
+        "pdf.close()\n"
     ),
 }
 
