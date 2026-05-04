@@ -238,62 +238,40 @@ def loads(
             native_loader = default_native
 
     from paker._loaders._base import get_native_loader, _resolve_loader_policy
-    resolved_loader = get_native_loader(_resolve_loader_policy(native_loader))
-    as_file_strategy_was_set = (
-        as_file_strategy is not None or disk_policy is not None
-    )
-    native_loader_was_set = (
-        native_loader is not None or disk_policy is not None
-    )
+    from paker._loaders._resource_paths import resolve_strategy
+    resolved_native = _resolve_loader_policy(native_loader)
+    resolved_as_file = resolve_strategy(as_file_strategy)
+
+    def _make_importer():
+        return JsonImporter(
+            s, key=key, as_file_strategy=resolved_as_file,
+            virtual_fs=virtual_fs,
+            native_loader=get_native_loader(resolved_native),
+        )
 
     importer = _get_active_importer()
-    if importer is not None:
-        if (
-            (key is not None and importer._key != key)
-            or _importer_policy_differs(
-                importer,
-                as_file_strategy=as_file_strategy,
-                native_loader=resolved_loader,
-                as_file_strategy_was_set=as_file_strategy_was_set,
-                native_loader_was_set=native_loader_was_set,
-            )
-        ):
-            importer = JsonImporter(
-                s, key=key, as_file_strategy=as_file_strategy,
-                virtual_fs=virtual_fs, native_loader=resolved_loader,
-            )
+    if importer is None:
+        return _make_importer()
+
+    needs_new = (key is not None and importer._key != key)
+    if not needs_new and (disk_policy is not None or as_file_strategy is not None or native_loader is not None):
+        needs_new = importer._as_file_strategy is not resolved_as_file
+    if not needs_new and (disk_policy is not None or native_loader is not None):
+        from paker._loaders._base import NativeLoaderPolicy
+        existing_is_disk = importer._native_loader.name == "tempfile"
+        requested_is_disk = resolved_native == NativeLoaderPolicy.DISK
+        needs_new = existing_is_disk != requested_is_disk
+
+    if needs_new:
+        return _make_importer()
+
+    for module_name, module_data in s.items():
+        if importer.find_spec(module_name, None) is not None:
+            if overwrite:
+                importer.add_module(module_name, module_data)
         else:
-            for module_name, module_data in s.items():
-                if importer.find_spec(module_name, None) is not None:
-                    if overwrite:
-                        importer.add_module(module_name, module_data)
-                else:
-                    importer.add_module(module_name, module_data)
-    else:
-        importer = JsonImporter(
-            s, key=key, as_file_strategy=as_file_strategy,
-            virtual_fs=virtual_fs, native_loader=resolved_loader,
-        )
+            importer.add_module(module_name, module_data)
     return importer
-
-
-def _importer_policy_differs(
-    importer: JsonImporter,
-    *,
-    as_file_strategy,
-    native_loader,
-    as_file_strategy_was_set: bool,
-    native_loader_was_set: bool,
-) -> bool:
-    """Return True when explicit policy knobs require a separate importer."""
-    if as_file_strategy_was_set:
-        from paker._loaders._resource_paths import resolve_strategy
-        if importer._as_file_strategy is not resolve_strategy(as_file_strategy):
-            return True
-    if native_loader_was_set:
-        if importer._native_loader.name != native_loader.name:
-            return True
-    return False
 
 
 def mp_initializer(

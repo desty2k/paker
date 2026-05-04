@@ -104,13 +104,8 @@ class TempFileLoader(NativeLoader):
 
 def _resolve_layout_path(origin_dir: str, layout_path: str, tempdir: str) -> str:
     """Resolve a bundled-lib layout path without escaping ``tempdir``."""
-    dest = os.path.abspath(os.path.join(origin_dir, layout_path))
-    tempdir_abs = os.path.abspath(tempdir)
-    try:
-        common = os.path.commonpath([dest, tempdir_abs])
-    except ValueError:
-        common = None
-    if common != tempdir_abs:
+    dest = os.path.normpath(os.path.join(origin_dir, layout_path))
+    if not dest.startswith(os.path.normpath(tempdir) + os.sep):
         raise ValueError(
             f"bundled native lib path escapes tempdir: {layout_path!r}"
         )
