@@ -228,25 +228,20 @@ def loads(
         s = json.loads(s)
     check_compatibility(s)
 
-    from paker._policy import resolve_disk_policy, map_disk_policy
-    resolved_policy = resolve_disk_policy(disk_policy)
-    if resolved_policy is not None:
-        default_as_file, default_native = map_disk_policy(resolved_policy)
-        if as_file_strategy is None:
-            as_file_strategy = default_as_file
-        if native_loader is None:
-            native_loader = default_native
-
-    from paker._loaders._base import get_native_loader, _resolve_loader_policy
-    from paker._loaders._resource_paths import resolve_strategy
-    resolved_native = _resolve_loader_policy(native_loader)
-    resolved_as_file = resolve_strategy(as_file_strategy)
+    from paker._loaders._base import get_native_loader
+    from paker._policy import resolve_runtime_policy
+    runtime_policy = resolve_runtime_policy(
+        disk_policy=disk_policy,
+        as_file_strategy=as_file_strategy,
+        native_loader=native_loader,
+    )
 
     def _make_importer():
         return JsonImporter(
-            s, key=key, as_file_strategy=resolved_as_file,
+            s, key=key, as_file_strategy=runtime_policy.as_file_strategy,
             virtual_fs=virtual_fs,
-            native_loader=get_native_loader(resolved_native),
+            native_loader=get_native_loader(runtime_policy.native_loader),
+            native_loader_policy=runtime_policy.native_loader,
         )
 
     importer = _get_active_importer()
@@ -254,13 +249,8 @@ def loads(
         return _make_importer()
 
     needs_new = (key is not None and importer._key != key)
-    if not needs_new and (disk_policy is not None or as_file_strategy is not None or native_loader is not None):
-        needs_new = importer._as_file_strategy is not resolved_as_file
-    if not needs_new and (disk_policy is not None or native_loader is not None):
-        from paker._loaders._base import NativeLoaderPolicy
-        existing_is_disk = importer._native_loader.name == "tempfile"
-        requested_is_disk = resolved_native == NativeLoaderPolicy.DISK
-        needs_new = existing_is_disk != requested_is_disk
+    if not needs_new:
+        needs_new = runtime_policy.differs_from_importer(importer)
 
     if needs_new:
         return _make_importer()

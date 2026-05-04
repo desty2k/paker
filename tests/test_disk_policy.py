@@ -4,7 +4,12 @@ import sys
 import pytest
 
 import paker
-from paker._policy import DiskPolicy, resolve_disk_policy, map_disk_policy
+from paker._policy import (
+    DiskPolicy,
+    map_disk_policy,
+    resolve_disk_policy,
+    resolve_runtime_policy,
+)
 from paker._loaders._base import NativeLoaderPolicy
 from paker._loaders._resource_paths import AsFileStrategy
 from paker._loaders._tempfile import TempFileLoader
@@ -70,6 +75,42 @@ class TestMapDiskPolicy:
         af, nl = map_disk_policy(DiskPolicy.DISK)
         assert af is AsFileStrategy.TEMPFILE
         assert nl is NativeLoaderPolicy.DISK
+
+
+class TestResolveRuntimePolicy:
+    def test_default_is_memory_policy(self):
+        policy = resolve_runtime_policy()
+
+        assert policy.as_file_strategy is AsFileStrategy.STRICT
+        assert policy.native_loader is NativeLoaderPolicy.AUTO
+        assert not policy.explicit_as_file
+        assert not policy.explicit_native_loader
+
+    def test_disk_policy_sets_both_subsystems(self):
+        policy = resolve_runtime_policy(disk_policy="disk")
+
+        assert policy.as_file_strategy is AsFileStrategy.TEMPFILE
+        assert policy.native_loader is NativeLoaderPolicy.DISK
+        assert policy.explicit_as_file
+        assert policy.explicit_native_loader
+
+    def test_explicit_overrides_only_their_subsystem(self):
+        policy = resolve_runtime_policy(
+            disk_policy="disk",
+            as_file_strategy="strict",
+            native_loader="auto",
+        )
+
+        assert policy.as_file_strategy is AsFileStrategy.STRICT
+        assert policy.native_loader is NativeLoaderPolicy.AUTO
+
+    def test_native_loader_alone_does_not_mark_as_file_explicit(self):
+        policy = resolve_runtime_policy(native_loader="disk")
+
+        assert policy.as_file_strategy is AsFileStrategy.STRICT
+        assert policy.native_loader is NativeLoaderPolicy.DISK
+        assert not policy.explicit_as_file
+        assert policy.explicit_native_loader
 
 
 class TestDiskPolicyIntegration:
@@ -168,6 +209,34 @@ class TestDiskPolicyOverrides:
         finally:
             if second is not None:
                 second.unload()
+            first.unload()
+            _clear()
+
+    def test_nested_native_loader_only_does_not_reset_as_file_strategy(self):
+        bundle = _pack()
+        _clear()
+        first = paker.loads(bundle, disk_policy="disk")
+        try:
+            second = paker.loads(bundle, native_loader="disk")
+            assert second is first
+            assert second._as_file_strategy is AsFileStrategy.TEMPFILE
+            assert second._native_loader_policy is NativeLoaderPolicy.DISK
+        finally:
+            first.unload()
+            _clear()
+
+    def test_nested_native_loader_override_preserves_existing_as_file_strategy(self):
+        bundle = _pack()
+        _clear()
+        first = paker.loads(
+            bundle, as_file_strategy="tempfile", native_loader="auto",
+        )
+        try:
+            second = paker.loads(bundle, native_loader="auto")
+            assert second is first
+            assert second._as_file_strategy is AsFileStrategy.TEMPFILE
+            assert second._native_loader_policy is NativeLoaderPolicy.AUTO
+        finally:
             first.unload()
             _clear()
 

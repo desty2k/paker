@@ -11,7 +11,7 @@ import logging
 import marshal
 import sys
 
-from paker._loaders import NativeLoader, get_native_loader
+from paker._loaders import NativeLoader, NativeLoaderPolicy, get_native_loader
 from paker._loaders._resource_paths import AsFileStrategy, resolve_strategy
 from paker.exceptions import PakerImportError
 
@@ -57,12 +57,14 @@ class JsonImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         self,
         modules: dict,
         native_loader: NativeLoader | None = None,
+        native_loader_policy: NativeLoaderPolicy | None = None,
         key: bytes | None = None,
         as_file_strategy: AsFileStrategy | str | None = None,
         virtual_fs: bool = True,
     ):
         self._modules = dict(modules)
         self._native_loader = native_loader or get_native_loader()
+        self._native_loader_policy = native_loader_policy or NativeLoaderPolicy.AUTO
         # Mutable copy so ``unload()`` can zero it in place. The caller's
         # ``bytes`` object would be immutable.
         self._key: bytearray | None = bytearray(key) if key is not None else None
