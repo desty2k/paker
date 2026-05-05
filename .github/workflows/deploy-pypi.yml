@@ -39,6 +39,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - uses: pypa/cibuildwheel@v3.4
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-* cp314-*"
@@ -46,6 +52,7 @@ jobs:
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64 ARM64"
+          CIBW_TEST_SKIP: "*-manylinux_aarch64"
           CIBW_TEST_REQUIRES: "pytest"
           CIBW_TEST_COMMAND: "pytest {project}/tests --ignore={project}/tests/smoke -x -q"
 
