@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paker"
-version = "2.0.0b1"
+version = "2.0.0"
 description = "Encrypted in-memory Python package loader"
 readme = "README.md"
 license = "MIT"
@@ -27,6 +27,9 @@ classifiers = [
     "Topic :: Software Development :: Build Tools",
 ]
 keywords = ["python", "package-loader", "in-memory", "encrypted", "native-extensions", "memfd", "code-protection", "bundle", "zero-disk", "importlib"]
+
+[project.optional-dependencies]
+crypto = ["cryptography>=41.0"]
 
 [project.scripts]
 paker = "paker.__main__:main_entry"

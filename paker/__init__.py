@@ -47,7 +47,7 @@ __all__ = [
     "ImportErrorPolicy", "AsFileStrategy", "NativeLoaderPolicy",
     "DiskPolicy", "virtual_fs", "__version__",
 ]
-__version__ = "2.0.0b1"
+__version__ = "2.0.0"
 
 
 class ImportErrorPolicy(enum.Enum):

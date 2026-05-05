@@ -71,6 +71,7 @@ class JsonImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         self._as_file_strategy: AsFileStrategy = resolve_strategy(as_file_strategy)
         self._owns_virtual_fs = False
         self._module_cache: dict[str, object] = {}
+        self._scrubbed: set[str] = set()
         self._logger = logging.getLogger(self.__class__.__name__)
         self._context_stack: list[str] = []
         sys.meta_path.insert(0, self)
@@ -176,11 +177,7 @@ class JsonImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
             )
 
         if encrypted:
-            # Stop the bundle from retaining the ciphertext for this module
-            # once it's been decrypted and executed. Re-imports rely on
-            # ``sys.modules`` caching; the loader itself won't be asked to
-            # decrypt this module again.
-            node["code"] = None
+            self._scrubbed.add(fullname)
         self._module_cache[fullname] = module
         self._logger.info("%s imported successfully", fullname)
 

@@ -199,7 +199,14 @@ def scrub(obj) -> None:
 
 def _aes_ctr_fallback(key: bytes, nonce: bytes, data: bytes) -> bytes:
     """Pure-Python AES-CTR fallback when the C extension is not compiled."""
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    try:
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    except ImportError:
+        raise ImportError(
+            "paker's C extension (_paker_crypto) is not available and the "
+            "pure-Python fallback requires the 'cryptography' package. "
+            "Install it with: pip install paker[crypto]"
+        ) from None
     cipher = Cipher(algorithms.AES(key), modes.CTR(nonce))
     decryptor = cipher.decryptor()
     return decryptor.update(data) + decryptor.finalize()

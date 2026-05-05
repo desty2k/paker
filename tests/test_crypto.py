@@ -318,7 +318,8 @@ class TestEncryptedPakerPipeline:
         imp = JsonImporter(data, key=KEY)
         import scrub_test
         assert scrub_test.SCRUBBED is True
-        assert data["scrub_test"]["code"] is None
+        assert "scrub_test" in imp._scrubbed
+        assert data["scrub_test"]["code"] is not None
         imp.unload()
 
     def test_encrypted_pyc_module(self):
